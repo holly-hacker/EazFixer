@@ -17,6 +17,9 @@ namespace EazFixer
 
             ModuleDefMD mod = ModuleDefMD.Load(file);
 
+            Console.WriteLine("Executing memory patches...");
+            Harmony.Patch();
+
             Console.WriteLine("Preprocessing...");
             foreach (IProcessor proc in procList)
                 proc.PreProcess(mod);

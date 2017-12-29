@@ -24,8 +24,11 @@ namespace EazFixer.Processors
         public void Process(ModuleDef m)
         {
             //load it normally and get all strings by invoking
-            var decrypter = FindMethod(Assembly.LoadFile(_file), _decrypterMethod) ?? throw new Exception("Couldn't find decrypter type again");
+            var decrypter = FindMethod(Assembly.LoadFile(_file), _decrypterMethod) ?? throw new Exception("Couldn't find decrypter method again");
 
+            //allow patch to use it
+            Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
+            
             //for every method with a body
             foreach (MethodDef meth in Utils.GetMethodsRecursive(m).Where(a => a.HasBody && a.Body.HasInstructions))
             {
@@ -70,6 +73,7 @@ namespace EazFixer.Processors
 
         private static MethodInfo FindMethod(Assembly ass, MethodDef meth)
         {
+            //TODO: get parameters (type=Type[]) from MethodDef and move to Utils class
             Type type = ass.GetType(meth.DeclaringType.ReflectionFullName);
             return type.GetMethod(meth.Name, BindingFlags.Static | BindingFlags.NonPublic, null, new[] {typeof(int)}, null);
         }
