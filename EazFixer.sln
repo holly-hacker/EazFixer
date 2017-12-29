@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EazFixer", "EazFixer\EazFixer.csproj", "{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AFDADE67-17BB-4C26-8B02-F26AD9C5E174}
+	EndGlobalSection
+EndGlobal
