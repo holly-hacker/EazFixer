@@ -13,7 +13,7 @@ namespace EazFixer
             if (args.Length != 1 || !File.Exists(file = args[0]))
                 return Exit("Please give me a file", true);
 
-            IProcessor[] procList = {new StringFixer()};
+            IProcessor[] procList = {new StringFixer(file)};
 
             ModuleDefMD mod = ModuleDefMD.Load(file);
 
