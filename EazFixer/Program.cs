@@ -36,10 +36,14 @@ namespace EazFixer
             string path = Path.Combine(Path.GetDirectoryName(file) ?? Directory.GetCurrentDirectory(), Path.GetFileNameWithoutExtension(file) + "-eazfix" + Path.GetExtension(file));
             mod.Write(path);
 
-            return Exit("DEBUG STOP", true);
+#if DEBUG
+            return Exit("DONE", true);
+#else
+            return Exit("Done.");
+#endif
         }
 
-        private static int Exit(string reason, bool askForInput)
+        private static int Exit(string reason, bool askForInput = false)
         {
             Console.WriteLine(reason);
             if (askForInput) {

@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using dnlib.DotNet;
 
 namespace EazFixer
@@ -17,6 +19,16 @@ namespace EazFixer
             foreach (TypeDef t in type.NestedTypes)
             foreach (MethodDef m in GetMethodsRecursive(t))
                 yield return m;
+        }
+
+        public static MethodInfo FindMethod(Assembly ass, MethodDef meth, Type[] args)
+        {
+            var flags = BindingFlags.Default;
+            flags |= meth.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
+            flags |= meth.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
+
+            Type type = ass.GetType(meth.DeclaringType.ReflectionFullName);
+            return type.GetMethod(meth.Name, flags, null, args, null);
         }
     }
 }
