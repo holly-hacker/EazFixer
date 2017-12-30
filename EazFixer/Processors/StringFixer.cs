@@ -11,7 +11,6 @@ namespace EazFixer.Processors
     {
         private readonly string _file;
         private MethodDef _decrypterMethod;
-        private Dictionary<int, string> _dictionary = new Dictionary<int, string>();
 
         public StringFixer(string file) => _file = file;
 
@@ -23,10 +22,13 @@ namespace EazFixer.Processors
 
         public void Process(ModuleDef m)
         {
+            //a dictionary to cache all strings
+            Dictionary<int, string> dictionary = new Dictionary<int, string>();
+
             //load it normally and get all strings by invoking
             var decrypter = FindMethod(Assembly.LoadFile(_file), _decrypterMethod) ?? throw new Exception("Couldn't find decrypter method again");
 
-            //allow patch to use it
+            //allow patch to use this method
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
             
             //for every method with a body
@@ -41,7 +43,13 @@ namespace EazFixer.Processors
                     if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && new SigComparer().Equals(md, _decrypterMethod))
                     {
                         int val = prev.GetLdcI4Value();
-                        _dictionary[val] = (string) decrypter.Invoke(null, new object[] {val});
+                        if (!dictionary.ContainsKey(val))
+                            dictionary[val] = (string) decrypter.Invoke(null, new object[] {val});
+
+                        prev.OpCode = OpCodes.Nop;
+
+                        curr.OpCode = OpCodes.Ldstr;
+                        curr.Operand = dictionary[val];
                     }
                 }
             }
@@ -49,8 +57,8 @@ namespace EazFixer.Processors
 
         public void PostProcess(ModuleDef m)
         {
-            //replace everything
-            throw new NotImplementedException();
+            //not used, for now
+            //TODO: remove string methods/types?
         }
 
         private static bool CanBeStringMethod(MethodDef method)

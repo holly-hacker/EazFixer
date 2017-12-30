@@ -32,6 +32,10 @@ namespace EazFixer
             foreach (IProcessor proc in procList)
                 proc.PostProcess(mod);
 
+            Console.WriteLine("Writing new assembly...");
+            string path = Path.Combine(Path.GetDirectoryName(file) ?? Directory.GetCurrentDirectory(), Path.GetFileNameWithoutExtension(file) + "-eazfix" + Path.GetExtension(file));
+            mod.Write(path);
+
             return Exit("DEBUG STOP", true);
         }
 
