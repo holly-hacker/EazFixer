@@ -32,3 +32,9 @@ deobfuscator like [de4dot](https://github.com/0xd4d/de4dot). If your version is 
 
 Also, I will not help you use this program. Consider it for advanced users only. If you do run into a problem and are sure it is a bug, 
 feel free to submit an issue but I cannot guarantee I will fix it.
+
+## Credits
+This tool uses the following (open source) software:
+* [dnlib](https://github.com/0xd4d/dnlib) by [0xd4d](https://github.com/0xd4d), license under the MIT license, for reading/writing assemblies.
+* a fork of [Harmony](https://github.com/hcoona/Harmony) by [hcoona](https://github.com/hcoona), licensed under the MIT license, to patch runtime methods.  
+The original [Harmony](https://github.com/pardeike/Harmony) is by [Andreas Pardeike](https://github.com/pardeike), but does not unprotect the memory pages it writes to, making the program crash.
