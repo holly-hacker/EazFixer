@@ -9,19 +9,19 @@ using dnlib.DotNet.Emit;
 
 namespace EazFixer.Processors
 {
-    internal class ResourceResolver : IProcessor
+    internal class ResourceResolver : ProcessorBase
     {
         private TypeDef _resourceResolver;
         private MethodDef _initMethod;
 
-        public void PreProcess(ModuleDef mod)
+        protected override void InitializeInternal(ModuleDef mod)
         {
             //find all "Resources" classes, and store them for later use
             _resourceResolver = mod.Types.Single(CanBeResourceResolver);
             _initMethod = _resourceResolver.Methods.Single(CanBeInitMethod);
         }
 
-        public void Process(ModuleDef mod, Assembly asm)
+        protected override void ProcessInternal(ModuleDef mod, Assembly asm)
         {
             //initialize all the resources
             var mi = Utils.FindMethod(asm, _initMethod, new Type[0]);
@@ -54,7 +54,7 @@ namespace EazFixer.Processors
             }
         }
 
-        public void PostProcess(ModuleDef mod)
+        protected override void CleanupInternal(ModuleDef mod)
         {
             //TODO: remove resource type
         }

@@ -7,17 +7,17 @@ using dnlib.DotNet.Emit;
 
 namespace EazFixer.Processors
 {
-    internal class StringFixer : IProcessor
+    internal class StringFixer : ProcessorBase
     {
         private MethodDef _decrypterMethod;
 
-        public void PreProcess(ModuleDef mod)
+        protected override void InitializeInternal(ModuleDef mod)
         {
             //find method
             _decrypterMethod = Utils.GetMethodsRecursive(mod).Single(CanBeStringMethod);
         }
 
-        public void Process(ModuleDef mod, Assembly asm)
+        protected override void ProcessInternal(ModuleDef mod, Assembly asm)
         {
             //a dictionary to cache all strings
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
@@ -27,7 +27,7 @@ namespace EazFixer.Processors
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
-            
+
             //for every method with a body...
             foreach (MethodDef meth in Utils.GetMethodsRecursive(mod).Where(a => a.HasBody && a.Body.HasInstructions))
             {
@@ -37,7 +37,7 @@ namespace EazFixer.Processors
                     //get this instruction and the previous
                     var prev = meth.Body.Instructions[i - 1];
                     var curr = meth.Body.Instructions[i];
-                    
+
                     //if they invoke the string decrypter method with an int parameter
                     if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && new SigComparer().Equals(md, _decrypterMethod))
                     {
@@ -55,7 +55,7 @@ namespace EazFixer.Processors
             }
         }
 
-        public void PostProcess(ModuleDef mod)
+        protected override void CleanupInternal(ModuleDef mod)
         {
             //not used, for now
             //TODO: remove string methods/types?
