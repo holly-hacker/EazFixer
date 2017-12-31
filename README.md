@@ -2,15 +2,14 @@
 A deobfuscation tool for Eazfuscator.
 
 ## Description
-EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/eazfuscator.net), a commercial .NET obfuscator. Right now, 
-it can only decrypt strings, but later ~~when it grows up~~ it may support more features as I need them.
+EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/eazfuscator.net), a commercial .NET obfuscator. For a list of features, see the list below.
 
 ### Implemented features:
-- String encryption (through invokation, after patching anti-invoke protection)
+* String encryption (through invokation)
+* Resource encryption (through invokation)
 
 ### Considered features:
 * Code and data virtualization
-* Resource encryption (in-progress, see [this branch](https://github.com/HoLLy-HaCKeR/EazFixer/tree/ResourceResolver))
 * Assembly encryption/embedding
 
 ### Not considered:
