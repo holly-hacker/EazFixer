@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -11,25 +10,25 @@ namespace EazFixer.Processors
     {
         private MethodDef _decrypterMethod;
 
-        protected override void InitializeInternal(ModuleDef mod)
+        protected override void InitializeInternal()
         {
             //find method
-            _decrypterMethod = Utils.GetMethodsRecursive(mod).Single(CanBeStringMethod);
+            _decrypterMethod = Utils.GetMethodsRecursive(Mod).Single(CanBeStringMethod);
         }
 
-        protected override void ProcessInternal(ModuleDef mod, Assembly asm)
+        protected override void ProcessInternal()
         {
             //a dictionary to cache all strings
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
-            var decrypter = Utils.FindMethod(asm, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
+            var decrypter = Utils.FindMethod(Asm, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
 
             //for every method with a body...
-            foreach (MethodDef meth in Utils.GetMethodsRecursive(mod).Where(a => a.HasBody && a.Body.HasInstructions))
+            foreach (MethodDef meth in Utils.GetMethodsRecursive(Mod).Where(a => a.HasBody && a.Body.HasInstructions))
             {
                 //.. and every instruction (starting at the second one) ...
                 for (int i = 1; i < meth.Body.Instructions.Count; i++)
@@ -55,7 +54,7 @@ namespace EazFixer.Processors
             }
         }
 
-        protected override void CleanupInternal(ModuleDef mod)
+        protected override void CleanupInternal()
         {
             //not used, for now
             //TODO: remove string methods/types?

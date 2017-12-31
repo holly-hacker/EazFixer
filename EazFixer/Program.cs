@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using dnlib.DotNet;
 using EazFixer.Processors;
 
 namespace EazFixer
@@ -15,32 +13,28 @@ namespace EazFixer
             if (args.Length != 1 || !File.Exists(file = args[0]))
                 return Exit("Please give me a file", true);
 
-            ProcessorBase[] procList = {new StringFixer(), new ResourceResolver()};
-
-            ModuleDefMD mod = ModuleDefMD.Load(file);
-            Assembly asm = Assembly.LoadFile(file);
+            var ctx = new EazContext(file, new ProcessorBase[] {new StringFixer(), new ResourceResolver()});
 
             Console.WriteLine("Executing memory patches...");
             Harmony.Patch();
 
             Console.WriteLine("Initializing modules...");
-            foreach (ProcessorBase proc in procList)
-                proc.Initialize(mod);
+            foreach (ProcessorBase proc in ctx)
+                proc.Initialize(ctx);
 
             Console.WriteLine("Processing...");
-            foreach (ProcessorBase proc in procList.Where(a => a.Initialized))
-                proc.Process(mod, asm);
+            foreach (ProcessorBase proc in ctx.Where(a => a.Initialized))
+                proc.Process();
 
             Console.WriteLine("Cleanup...");
-            foreach (ProcessorBase proc in procList.Where(a => a.Success))
-                proc.Cleanup(mod);
+            foreach (ProcessorBase proc in ctx.Where(a => a.Success))
+                proc.Cleanup();
 
             //write success/failure
             Console.WriteLine();
             Console.WriteLine("Applied patches:");
             var cc = Console.ForegroundColor;
-            foreach (var p in procList)
-            {
+            foreach (ProcessorBase p in ctx) {
                 Console.Write(p.GetType().Name + ": ");
                 Console.ForegroundColor = p.Success ? ConsoleColor.Green : ConsoleColor.Red;
                 Console.WriteLine(p.Success ? "Success" : "Failed");
@@ -50,7 +44,7 @@ namespace EazFixer
 
             Console.WriteLine("Writing new assembly...");
             string path = Path.Combine(Path.GetDirectoryName(file) ?? Directory.GetCurrentDirectory(), Path.GetFileNameWithoutExtension(file) + "-eazfix" + Path.GetExtension(file));
-            mod.Write(path);
+            ctx.Module.Write(path);
 
 #if DEBUG
             return Exit("DONE", true);

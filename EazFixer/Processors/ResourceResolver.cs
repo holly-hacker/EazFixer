@@ -14,17 +14,17 @@ namespace EazFixer.Processors
         private TypeDef _resourceResolver;
         private MethodDef _initMethod;
 
-        protected override void InitializeInternal(ModuleDef mod)
+        protected override void InitializeInternal()
         {
             //find all "Resources" classes, and store them for later use
-            _resourceResolver = mod.Types.Single(CanBeResourceResolver);
+            _resourceResolver = Mod.Types.Single(CanBeResourceResolver);
             _initMethod = _resourceResolver.Methods.Single(CanBeInitMethod);
         }
 
-        protected override void ProcessInternal(ModuleDef mod, Assembly asm)
+        protected override void ProcessInternal()
         {
             //initialize all the resources
-            var mi = Utils.FindMethod(asm, _initMethod, new Type[0]);
+            var mi = Utils.FindMethod(Asm, _initMethod, new Type[0]);
             mi.Invoke(null, new object[0]);
 
             //get the dictionary we just initialized
@@ -49,12 +49,12 @@ namespace EazFixer.Processors
                     var md = ModuleDefMD.Load(module);
 
                     foreach (Resource resource in md.Resources)
-                        mod.Resources.Add(resource);
+                        Mod.Resources.Add(resource);
                 }
             }
         }
 
-        protected override void CleanupInternal(ModuleDef mod)
+        protected override void CleanupInternal()
         {
             //TODO: remove resource type
         }

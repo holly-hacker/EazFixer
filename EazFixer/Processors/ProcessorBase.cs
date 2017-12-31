@@ -10,10 +10,18 @@ namespace EazFixer.Processors
         public bool Initialized = false;
         public bool Success = false;
 
-        public bool Initialize(ModuleDef mod)
+        private EazContext _context;
+        protected ModuleDef Mod => _context.Module;
+        protected Assembly Asm => _context.Assembly;
+        protected ProcessorBase[] OtherProcessors => _context.Processors;
+
+
+        public bool Initialize(EazContext ctx)
         {
+            _context = ctx;
+
             try {
-                InitializeInternal(mod);
+                InitializeInternal();
                 return Initialized = true;
             } catch (Exception e) {
                 Debug.WriteLine($"[D] Could not initialize {MethodBase.GetCurrentMethod().DeclaringType?.Name}: {e.Message}");
@@ -21,10 +29,10 @@ namespace EazFixer.Processors
             }
         }
 
-        public bool Process(ModuleDef mod, Assembly asm)
+        public bool Process()
         {
             try {
-                InitializeInternal(mod);
+                ProcessInternal();
                 return Success = true;
             } catch (Exception e) {
                 Debug.WriteLine($"[D] Could not execute {MethodBase.GetCurrentMethod().DeclaringType?.Name}: {e.Message}");
@@ -32,10 +40,10 @@ namespace EazFixer.Processors
             }
         }
 
-        public void Cleanup(ModuleDef mod) => CleanupInternal(mod);
+        public void Cleanup() => CleanupInternal();
 
-        protected abstract void InitializeInternal(ModuleDef mod);
-        protected abstract void ProcessInternal(ModuleDef mod, Assembly asm);
-        protected abstract void CleanupInternal(ModuleDef mod);
+        protected abstract void InitializeInternal();
+        protected abstract void ProcessInternal();
+        protected abstract void CleanupInternal();
     }
 }
