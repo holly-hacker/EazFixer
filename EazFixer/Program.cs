@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using dnlib.DotNet;
 using EazFixer.Processors;
 
@@ -13,7 +14,7 @@ namespace EazFixer
             if (args.Length != 1 || !File.Exists(file = args[0]))
                 return Exit("Please give me a file", true);
 
-            IProcessor[] procList = {new StringFixer(file), new ResourceResolver(file)};
+            IProcessor[] procList = {new StringFixer(), new ResourceResolver()};
 
             ModuleDefMD mod = ModuleDefMD.Load(file);
 
@@ -26,7 +27,7 @@ namespace EazFixer
 
             Console.WriteLine("Processing...");
             foreach (IProcessor proc in procList)
-                proc.Process(mod);
+                proc.Process(mod, Assembly.Load(file));
 
             Console.WriteLine("Postprocessing...");
             foreach (IProcessor proc in procList)

@@ -9,30 +9,27 @@ namespace EazFixer.Processors
 {
     internal class StringFixer : IProcessor
     {
-        private readonly string _file;
         private MethodDef _decrypterMethod;
 
-        public StringFixer(string file) => _file = file;
-
-        public void PreProcess(ModuleDef m)
+        public void PreProcess(ModuleDef mod)
         {
             //find method
-            _decrypterMethod = Utils.GetMethodsRecursive(m).Single(CanBeStringMethod);
+            _decrypterMethod = Utils.GetMethodsRecursive(mod).Single(CanBeStringMethod);
         }
 
-        public void Process(ModuleDef m)
+        public void Process(ModuleDef mod, Assembly asm)
         {
             //a dictionary to cache all strings
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
-            var decrypter = Utils.FindMethod(Assembly.LoadFile(_file), _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
+            var decrypter = Utils.FindMethod(asm, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
             
             //for every method with a body...
-            foreach (MethodDef meth in Utils.GetMethodsRecursive(m).Where(a => a.HasBody && a.Body.HasInstructions))
+            foreach (MethodDef meth in Utils.GetMethodsRecursive(mod).Where(a => a.HasBody && a.Body.HasInstructions))
             {
                 //.. and every instruction (starting at the second one) ...
                 for (int i = 1; i < meth.Body.Instructions.Count; i++)
@@ -58,7 +55,7 @@ namespace EazFixer.Processors
             }
         }
 
-        public void PostProcess(ModuleDef m)
+        public void PostProcess(ModuleDef mod)
         {
             //not used, for now
             //TODO: remove string methods/types?

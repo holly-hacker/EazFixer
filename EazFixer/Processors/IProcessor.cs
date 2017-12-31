@@ -1,11 +1,12 @@
-﻿using dnlib.DotNet;
+﻿using System.Reflection;
+using dnlib.DotNet;
 
 namespace EazFixer.Processors
 {
     internal interface IProcessor
     {
-        void PreProcess(ModuleDef m);
-        void Process(ModuleDef m);
-        void PostProcess(ModuleDef m);
+        void PreProcess(ModuleDef mod);
+        void Process(ModuleDef mod, Assembly asm);
+        void PostProcess(ModuleDef mod);
     }
 }
