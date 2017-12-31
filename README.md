@@ -10,13 +10,14 @@ it can only decrypt strings, but later ~~when it grows up~~ it may support more 
 
 ### Considered features:
 * Code and data virtualization
-* Resource encryption
+* Resource encryption (in-progress, see [this branch](https://github.com/HoLLy-HaCKeR/EazFixer/tree/ResourceResolver))
+* Assembly encryption/embedding
 
 ### Not considered:
 * Symbol renaming (usually the symbol names are unrecoverable)
 * Automatic code optimization (not an anti-feature!)
 * Code control flow obfuscation (I didn't have any problems with my samples in dnSpy)
-* Assemblies merging and embedding (doesn't seem probable, especially with symbol renaming)
+* Assemblies merging (doesn't seem probable, especially with symbol renaming)
 
 ## Usage
 For now, just call it from the commandline and give it your obfsucated file as parameter. Or, if you are scared of typing in commands, 
