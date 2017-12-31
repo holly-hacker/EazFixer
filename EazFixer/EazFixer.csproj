@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="Harmony.cs" />
     <Compile Include="Processors\IProcessor.cs" />
+    <Compile Include="Processors\ResourceResolver.cs" />
     <Compile Include="Processors\StringFixer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
