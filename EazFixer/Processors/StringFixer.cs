@@ -1,38 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace EazFixer.Processors
 {
-    internal class StringFixer : IProcessor
+    internal class StringFixer : ProcessorBase
     {
-        private readonly string _file;
         private MethodDef _decrypterMethod;
 
-        public StringFixer(string file) => _file = file;
-
-        public void PreProcess(ModuleDef m)
+        protected override void InitializeInternal()
         {
             //find method
-            _decrypterMethod = Utils.GetMethodsRecursive(m).Single(CanBeStringMethod);
+            _decrypterMethod = Utils.GetMethodsRecursive(Mod).Single(CanBeStringMethod);
         }
 
-        public void Process(ModuleDef m)
+        protected override void ProcessInternal()
         {
             //a dictionary to cache all strings
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
-            var decrypter = Utils.FindMethod(Assembly.LoadFile(_file), _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
+            var decrypter = Utils.FindMethod(Asm, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
-            
+
             //for every method with a body...
-            foreach (MethodDef meth in Utils.GetMethodsRecursive(m).Where(a => a.HasBody && a.Body.HasInstructions))
+            foreach (MethodDef meth in Utils.GetMethodsRecursive(Mod).Where(a => a.HasBody && a.Body.HasInstructions))
             {
                 //.. and every instruction (starting at the second one) ...
                 for (int i = 1; i < meth.Body.Instructions.Count; i++)
@@ -40,7 +36,7 @@ namespace EazFixer.Processors
                     //get this instruction and the previous
                     var prev = meth.Body.Instructions[i - 1];
                     var curr = meth.Body.Instructions[i];
-                    
+
                     //if they invoke the string decrypter method with an int parameter
                     if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && new SigComparer().Equals(md, _decrypterMethod))
                     {
@@ -58,7 +54,7 @@ namespace EazFixer.Processors
             }
         }
 
-        public void PostProcess(ModuleDef m)
+        protected override void CleanupInternal()
         {
             //not used, for now
             //TODO: remove string methods/types?
