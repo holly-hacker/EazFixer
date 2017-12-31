@@ -40,7 +40,14 @@ namespace EazFixer.Processors
             }
         }
 
-        public void Cleanup() => CleanupInternal();
+        public void Cleanup()
+        {
+            try {
+                CleanupInternal();
+            } catch (Exception e) {
+                Debug.WriteLine($"[D] Could not clean up {MethodBase.GetCurrentMethod().DeclaringType?.Name}: {e.Message}");
+            }
+        }
 
         protected abstract void InitializeInternal();
         protected abstract void ProcessInternal();

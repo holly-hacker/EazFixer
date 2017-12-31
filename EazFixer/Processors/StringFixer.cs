@@ -56,8 +56,13 @@ namespace EazFixer.Processors
 
         protected override void CleanupInternal()
         {
-            //not used, for now
-            //TODO: remove string methods/types?
+            //ensure that the string decryptor isn't called anywhere
+            if (Utils.LookForReferences(Mod, _decrypterMethod))
+                throw new Exception("String decrypter is still being called");
+
+            //remove the string decryptor class
+            var stringType = _decrypterMethod.DeclaringType;
+            Mod.Types.Remove(stringType);
         }
 
         private static bool CanBeStringMethod(MethodDef method)

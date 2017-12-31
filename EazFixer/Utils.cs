@@ -30,5 +30,14 @@ namespace EazFixer
             Type type = ass.GetType(meth.DeclaringType.ReflectionFullName);
             return type.GetMethod(meth.Name, flags, null, args, null);
         }
+
+        public static bool LookForReferences(ModuleDef mod, MethodDef meth) //methoddef can be generalized
+        {
+            //Why LINQ you may ask? Because I can :)
+            return GetMethodsRecursive(mod)
+                .Where(m => m.HasBody && m.Body.HasInstructions)
+                .SelectMany(m => m.Body.Instructions)
+                .Any(i => i.Operand != null && i.Operand == meth);
+        }
     }
 }
