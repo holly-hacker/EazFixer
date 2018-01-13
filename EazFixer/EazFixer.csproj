@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="EazContext.cs" />
     <Compile Include="Harmony.cs" />
+    <Compile Include="Processors\AssemblyResolver.cs" />
     <Compile Include="Processors\ProcessorBase.cs" />
     <Compile Include="Processors\ResourceResolver.cs" />
     <Compile Include="Processors\StringFixer.cs" />
