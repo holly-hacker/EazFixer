@@ -13,7 +13,8 @@ namespace EazFixer.Processors
         protected override void InitializeInternal()
         {
             //find method
-            _decrypterMethod = Utils.GetMethodsRecursive(Mod).Single(CanBeStringMethod);
+            _decrypterMethod = Utils.GetMethodsRecursive(Mod).SingleOrDefault(CanBeStringMethod) 
+                ?? throw new Exception("Could not find decrypter method");
         }
 
         protected override void ProcessInternal()

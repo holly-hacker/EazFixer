@@ -27,7 +27,7 @@ namespace EazFixer
                 proc.Process();
 
             Console.WriteLine("Cleanup...");
-            foreach (ProcessorBase proc in ctx.Where(a => a.Success))
+            foreach (ProcessorBase proc in ctx.Where(a => a.Processed))
                 proc.Cleanup();
 
             //write success/failure
@@ -36,8 +36,13 @@ namespace EazFixer
             var cc = Console.ForegroundColor;
             foreach (ProcessorBase p in ctx) {
                 Console.Write(p.GetType().Name + ": ");
-                Console.ForegroundColor = p.Success ? ConsoleColor.Green : ConsoleColor.Red;
-                Console.WriteLine(p.Success ? "Success" : "Failed");
+                if (p.CleanedUp) {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Success");
+                } else {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Failed ({p.ErrorMessage})");
+                }
                 Console.ForegroundColor = cc;
             }
             Console.WriteLine();

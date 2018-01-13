@@ -17,8 +17,10 @@ namespace EazFixer.Processors
         protected override void InitializeInternal()
         {
             //find all "Resources" classes, and store them for later use
-            _resourceResolver = Mod.Types.Single(CanBeResourceResolver);
-            _initMethod = _resourceResolver.Methods.Single(CanBeInitMethod);
+            _resourceResolver = Mod.Types.SingleOrDefault(CanBeResourceResolver) 
+                ?? throw new Exception("Could not find resolver type");
+            _initMethod = _resourceResolver.Methods.SingleOrDefault(CanBeInitMethod) 
+                ?? throw new Exception("Could not find init method");
         }
 
         protected override void ProcessInternal()
