@@ -22,6 +22,9 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 For now, just call it from the commandline and give it your obfsucated file as parameter. Or, if you are scared of typing in commands, 
 just drag your obfuscated on the exe and let it run.
 
+If your assembly is protected with control-flow deobfuscation, run it through [de4dot](https://github.com/0xd4d/de4dot) with the
+`--only-cflow-deob` flag first.
+
 ## Building
 Clone the repository recursively and use the latest version of Visual Studio (2017, at the time of writing) to build.
 
