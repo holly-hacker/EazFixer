@@ -13,7 +13,7 @@ namespace EazFixer.Processors
         protected override void InitializeInternal()
         {
             //find method
-            _decrypterMethod = Utils.GetMethodsRecursive(Mod).SingleOrDefault(CanBeStringMethod) 
+            _decrypterMethod = Utils.GetMethodsRecursive(Ctx.Module).SingleOrDefault(CanBeStringMethod) 
                 ?? throw new Exception("Could not find decrypter method");
         }
 
@@ -23,13 +23,13 @@ namespace EazFixer.Processors
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
-            var decrypter = Utils.FindMethod(Asm, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
+            var decrypter = Utils.FindMethod(Ctx.Assembly, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;
 
             //for every method with a body...
-            foreach (MethodDef meth in Utils.GetMethodsRecursive(Mod).Where(a => a.HasBody && a.Body.HasInstructions))
+            foreach (MethodDef meth in Utils.GetMethodsRecursive(Ctx.Module).Where(a => a.HasBody && a.Body.HasInstructions))
             {
                 //.. and every instruction (starting at the second one) ...
                 for (int i = 1; i < meth.Body.Instructions.Count; i++)
@@ -58,12 +58,12 @@ namespace EazFixer.Processors
         protected override void CleanupInternal()
         {
             //ensure that the string decryptor isn't called anywhere
-            if (Utils.LookForReferences(Mod, _decrypterMethod))
+            if (Utils.LookForReferences(Ctx.Module, _decrypterMethod))
                 throw new Exception("String decrypter is still being called");
 
             //remove the string decryptor class
             var stringType = _decrypterMethod.DeclaringType;
-            Mod.Types.Remove(stringType);
+            Ctx.Module.Types.Remove(stringType);
         }
 
         private static bool CanBeStringMethod(MethodDef method)
