@@ -5,12 +5,12 @@ A deobfuscation tool for Eazfuscator.
 EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/eazfuscator.net), a commercial .NET obfuscator. For a list of features, see the list below.
 
 ### Implemented features:
-* String encryption (through invokation)
-* Resource encryption (through invokation)
+* String encryption
+* Resource encryption
+* Assembly embedding
 
 ### Considered features:
 * Code and data virtualization
-* Assembly encryption/embedding
 
 ### Not considered:
 * Symbol renaming (usually the symbol names are unrecoverable)
