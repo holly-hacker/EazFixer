@@ -13,8 +13,8 @@ namespace EazFixer
             if (args.Length != 1 || !File.Exists(file = args[0]))
                 return Exit("Please give me a file", true);
 
-            //order is important! AssemblyResolver has to be after StringFixer
-            var ctx = new EazContext(file, new ProcessorBase[] {new StringFixer(), new AssemblyResolver(), new ResourceResolver()});
+            //order is important! AssemblyResolver has to be after StringFixer and ResourceResolver
+            var ctx = new EazContext(file, new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver() });
 
             Console.WriteLine("Executing memory patches...");
             Harmony.Patch();

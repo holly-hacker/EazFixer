@@ -11,6 +11,7 @@ namespace EazFixer.Processors
 {
     internal class ResourceResolver : ProcessorBase
     {
+        public List<Assembly> ResourceAssemblies;
         private TypeDef _resourceResolver;
         private MethodDef _initMethod;
 
@@ -36,16 +37,16 @@ namespace EazFixer.Processors
             var dictionary = (IDictionary)dictionaryValue;
 
             //extract the assemblies through reflection
-            List<Assembly> assemblies = new List<Assembly>();
+            ResourceAssemblies = new List<Assembly>();
             foreach (object obj in dictionary.Values) {
                 var methods = obj.GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Instance).ToList();
                 var assembly = (Assembly) methods.Single(a => !a.IsConstructor && a.ReturnParameter?.ParameterType == typeof(Assembly)).Invoke(obj, new object[0]);
-                if (!assemblies.Contains(assembly))
-                    assemblies.Add(assembly);
+                if (!ResourceAssemblies.Contains(assembly))
+                    ResourceAssemblies.Add(assembly);
             }
 
             //extract the resources and add them to the module
-            foreach (var assembly in assemblies) {
+            foreach (var assembly in ResourceAssemblies) {
                 foreach (Module module in assembly.Modules) {
                     Debug.WriteLine("[D] Loading module for ResourceResolver...");
                     var md = ModuleDefMD.Load(module);

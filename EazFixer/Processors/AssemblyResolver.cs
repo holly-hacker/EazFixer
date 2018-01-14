@@ -45,7 +45,12 @@ namespace EazFixer.Processors
             //get path to write to
             var path = Path.GetDirectoryName(Ctx.Assembly.Location);
 
-            foreach (var assembly in _assemblies)
+            //get the resource resolver and figure out which assemblies we shouldn't extract
+            var res = Ctx.Get<ResourceResolver>();
+            var asmEnumerator = _assemblies.Where(a => res.ResourceAssemblies.All(b 
+                => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)));
+
+            foreach (var assembly in asmEnumerator)
             {
                 //get the resource containing the assembly
                 string resName = assembly.ResourceName;
@@ -53,6 +58,7 @@ namespace EazFixer.Processors
                 byte[] buffer = new byte[stream.Length];
                 stream.Read(buffer, 0, (int)stream.Length);
 
+                //if the assembly is encrypted: decrypt it
                 if (assembly.Encrypted) {
                     Debug.WriteLine("Decrypting assembly...");
                     _decrypter.Invoke(null, new object[] {buffer});
@@ -60,8 +66,6 @@ namespace EazFixer.Processors
 
                 File.WriteAllBytes(Path.Combine(path, assembly.Filename), buffer);
             }
-
-            //TODO: make sure to not extract the resource dll, we should have done that in ResourceResolver
         }
 
         protected override void CleanupInternal()
@@ -116,7 +120,7 @@ namespace EazFixer.Processors
             }
         }
 
-        internal sealed class EmbeddedAssemblyInfo
+        internal class EmbeddedAssemblyInfo
         {
             public string Fullname {
                 get {
