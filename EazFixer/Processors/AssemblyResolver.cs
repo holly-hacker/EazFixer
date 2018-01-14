@@ -70,7 +70,25 @@ namespace EazFixer.Processors
 
         protected override void CleanupInternal()
         {
-            //TODO: remove resolver type
+            //remove the call to the method that sets OnAssemblyResolve
+            var modType = Ctx.Module.GlobalType ?? throw new Exception("Could not find <Module>");
+            var instructions = modType.FindStaticConstructor()?.Body?.Instructions ?? throw new Exception("Missing <Module> .cctor");
+            foreach (Instruction instr in instructions)
+            {
+                if (instr.OpCode.Code != Code.Call) continue;
+                if (!(instr.Operand is MethodDef md)) continue;
+
+                if (md.DeclaringType == _assemblyResolver)
+                    instr.OpCode = OpCodes.Nop;
+            }
+
+            //remove types
+            Ctx.Module.Types.Remove(_assemblyResolver);
+
+            //remove resources
+            foreach (var assembly in _assemblies)
+                Ctx.Module.Resources.Remove(Ctx.Module.Resources.SingleOrDefault(a => a.Name == assembly.ResourceName)
+                                            ?? throw new Exception("Resource name not unique (or present)"));
         }
 
         private bool CanBeAssemblyResolver(TypeDef t)
