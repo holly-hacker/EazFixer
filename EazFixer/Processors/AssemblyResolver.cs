@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -10,11 +13,13 @@ namespace EazFixer.Processors
     internal class AssemblyResolver : ProcessorBase
     {
         private TypeDef _assemblyResolver;
-        private List<EmbeddedAssembly> _assemblies;
+        private List<EmbeddedAssemblyInfo> _assemblies;
+        private MethodInfo _decrypter;
 
         protected override void InitializeInternal()
         {
-            //find the assembly resolver type
+            //try to find the embedded assemblies string, which is located in 
+            //the iterator in the EnumerateEmbeddedAssemblies function
             _assemblyResolver = Mod.Types.SingleOrDefault(CanBeAssemblyResolver)
                                 ?? throw new Exception("Could not find resolver type");
             var extractionApi = _assemblyResolver.NestedTypes.SingleOrDefault(CanBeExtractionApi)
@@ -23,17 +28,40 @@ namespace EazFixer.Processors
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies iterator");
             var moveNext = enumerable.Methods.SingleOrDefault(CanBeMoveNext)
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies's MoveNext");
-
             var str = moveNext.Body.Instructions.SingleOrDefault(a => a.OpCode.Code == Code.Ldstr)?.Operand as string
                                 ?? throw new Exception("Could not find assembly list");
 
             _assemblies = EnumerateEmbeddedAssemblies(str).ToList();
+
+            //only if _assemblies.Any(a => a.Encrypted)?
+            //find the decryption method
+            var decryptionMethodDef = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod)
+                                ?? throw new Exception("Could not find decryption method");
+            _decrypter = Utils.FindMethod(Asm, decryptionMethodDef, new[] {typeof(byte[])});
         }
 
         protected override void ProcessInternal()
         {
-            //TODO: make sure to not extract the resource dll, do should have done that in ResourceResolver
-            throw new NotImplementedException();
+            //get path to write to
+            var path = Path.GetDirectoryName(Asm.Location);
+
+            foreach (var assembly in _assemblies)
+            {
+                //get the resource containing the assembly
+                string resName = assembly.ResourceName;
+                var stream = Asm.GetManifestResourceStream(resName);    //not sure if reflection is the best way
+                byte[] buffer = new byte[stream.Length];
+                stream.Read(buffer, 0, (int)stream.Length);
+
+                if (assembly.Encrypted) {
+                    Debug.WriteLine("Decrypting assembly...");
+                    _decrypter.Invoke(null, new object[] {buffer});
+                }
+
+                File.WriteAllBytes(Path.Combine(path, assembly.Filename), buffer);
+            }
+
+            //TODO: make sure to not extract the resource dll, we should have done that in ResourceResolver
         }
 
         protected override void CleanupInternal()
@@ -59,7 +87,9 @@ namespace EazFixer.Processors
         private bool CanBeEnumerable(TypeDef t) => t.HasInterfaces;
         private bool CanBeMoveNext(MethodDef m) => m.Overrides.Any(a => a.MethodDeclaration.FullName == "System.Boolean System.Collections.IEnumerator::MoveNext()");
 
-        private static IEnumerable<EmbeddedAssembly> EnumerateEmbeddedAssemblies(string text)
+        private bool CanBeDecryptionMethod(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])";
+
+        private static IEnumerable<EmbeddedAssemblyInfo> EnumerateEmbeddedAssemblies(string text)
         {
             var split = text.Split(',');
 
@@ -67,9 +97,9 @@ namespace EazFixer.Processors
             {
                 string b64 = split[i];
                 string resName = split[i + 1];
-                var asm = new EmbeddedAssembly { FullnameBase64 = b64 };
+                var asm = new EmbeddedAssemblyInfo { FullnameBase64 = b64 };
 
-                //possible flags?
+                //check flags
                 int posPipe = resName.IndexOf('|');
                 if (posPipe >= 0)
                 {
@@ -86,7 +116,7 @@ namespace EazFixer.Processors
             }
         }
 
-        internal sealed class EmbeddedAssembly
+        internal sealed class EmbeddedAssemblyInfo
         {
             public string Fullname {
                 get {
