@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using EazFixer.Processors;
 
@@ -9,12 +8,11 @@ namespace EazFixer
     {
         private static int Main(string[] args)
         {
-            string file;
-            if (args.Length != 1 || !File.Exists(file = args[0]))
-                return Exit("Please give me a file", true);
+            if (!Commandline.Parse(args, out string inFile, out string outFile))
+                return Exit("Please pass me a file.", true);
 
             //order is important! AssemblyResolver has to be after StringFixer and ResourceResolver
-            var ctx = new EazContext(file, new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver() });
+            var ctx = new EazContext(inFile, new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver()});
 
             Console.WriteLine("Executing memory patches...");
             Harmony.Patch();
@@ -49,8 +47,7 @@ namespace EazFixer
             Console.WriteLine();
 
             Console.WriteLine("Writing new assembly...");
-            string path = Path.Combine(Path.GetDirectoryName(file) ?? Directory.GetCurrentDirectory(), Path.GetFileNameWithoutExtension(file) + "-eazfix" + Path.GetExtension(file));
-            ctx.Module.Write(path);
+            ctx.Module.Write(outFile);
 
 #if DEBUG
             return Exit("DONE", true);
