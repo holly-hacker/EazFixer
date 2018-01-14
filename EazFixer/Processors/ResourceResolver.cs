@@ -17,7 +17,7 @@ namespace EazFixer.Processors
         protected override void InitializeInternal()
         {
             //find all "Resources" classes, and store them for later use
-            _resourceResolver = Mod.Types.SingleOrDefault(CanBeResourceResolver) 
+            _resourceResolver = Ctx.Module.Types.SingleOrDefault(CanBeResourceResolver) 
                 ?? throw new Exception("Could not find resolver type");
             _initMethod = _resourceResolver.Methods.SingleOrDefault(CanBeInitMethod) 
                 ?? throw new Exception("Could not find init method");
@@ -26,7 +26,7 @@ namespace EazFixer.Processors
         protected override void ProcessInternal()
         {
             //initialize all the resources
-            var mi = Utils.FindMethod(Asm, _initMethod, new Type[0]);
+            var mi = Utils.FindMethod(Ctx.Assembly, _initMethod, new Type[0]);
             mi.Invoke(null, new object[0]);
 
             //get the dictionary we just initialized
@@ -51,7 +51,7 @@ namespace EazFixer.Processors
                     var md = ModuleDefMD.Load(module);
 
                     foreach (Resource resource in md.Resources)
-                        Mod.Resources.Add(resource);
+                        Ctx.Module.Resources.Add(resource);
                 }
             }
         }
@@ -59,7 +59,7 @@ namespace EazFixer.Processors
         protected override void CleanupInternal()
         {
             //remove the call to the method that sets OnResourceResolve
-            var modType = Mod.GlobalType ?? throw new Exception("Could not find <Module>");
+            var modType = Ctx.Module.GlobalType ?? throw new Exception("Could not find <Module>");
             var instructions = modType.FindStaticConstructor()?.Body?.Instructions ?? throw new Exception("Missing <Module> .cctor");
             foreach (Instruction instr in instructions) {
                 if (instr.OpCode.Code != Code.Call) continue;
@@ -69,7 +69,7 @@ namespace EazFixer.Processors
                     instr.OpCode = OpCodes.Nop;
             }
 
-            Mod.Types.Remove(_resourceResolver);
+            Ctx.Module.Types.Remove(_resourceResolver);
         }
 
         private static bool CanBeResourceResolver(TypeDef t)

@@ -1,7 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using dnlib.DotNet;
 using EazFixer.Processors;
 
@@ -23,5 +25,9 @@ namespace EazFixer
         //allow enumerating Processors
         public IEnumerator<ProcessorBase> GetEnumerator() => Processors.AsEnumerable().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        //allow easily getting other processors by type
+        public T Get<T>() where T : ProcessorBase => (T)this[typeof(T)];
+        public ProcessorBase this[Type index] => Processors.Single(a => a.GetType() == index);
     }
 }

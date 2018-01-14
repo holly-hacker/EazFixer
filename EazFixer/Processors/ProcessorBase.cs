@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Reflection;
-using dnlib.DotNet;
 
 namespace EazFixer.Processors
 {
@@ -12,19 +10,16 @@ namespace EazFixer.Processors
 
         public string ErrorMessage => _errorInitialized ?? _errorProcessed ?? _errorCleanup;
 
+        protected EazContext Ctx;
+
         private string _errorInitialized;
         private string _errorProcessed;
         private string _errorCleanup;
 
-        private EazContext _context;
-        protected ModuleDef Mod => _context.Module;
-        protected Assembly Asm => _context.Assembly;
-        protected ProcessorBase[] OtherProcessors => _context.Processors;
-
 
         public void Initialize(EazContext ctx)
         {
-            _context = ctx;
+            Ctx = ctx;
 
             try {
                 InitializeInternal();

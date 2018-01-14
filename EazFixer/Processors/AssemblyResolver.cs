@@ -20,7 +20,7 @@ namespace EazFixer.Processors
         {
             //try to find the embedded assemblies string, which is located in 
             //the iterator in the EnumerateEmbeddedAssemblies function
-            _assemblyResolver = Mod.Types.SingleOrDefault(CanBeAssemblyResolver)
+            _assemblyResolver = Ctx.Module.Types.SingleOrDefault(CanBeAssemblyResolver)
                                 ?? throw new Exception("Could not find resolver type");
             var extractionApi = _assemblyResolver.NestedTypes.SingleOrDefault(CanBeExtractionApi)
                                 ?? throw new Exception("Could not find assembly extraction helper");
@@ -37,19 +37,19 @@ namespace EazFixer.Processors
             //find the decryption method
             var decryptionMethodDef = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod)
                                 ?? throw new Exception("Could not find decryption method");
-            _decrypter = Utils.FindMethod(Asm, decryptionMethodDef, new[] {typeof(byte[])});
+            _decrypter = Utils.FindMethod(Ctx.Assembly, decryptionMethodDef, new[] {typeof(byte[])});
         }
 
         protected override void ProcessInternal()
         {
             //get path to write to
-            var path = Path.GetDirectoryName(Asm.Location);
+            var path = Path.GetDirectoryName(Ctx.Assembly.Location);
 
             foreach (var assembly in _assemblies)
             {
                 //get the resource containing the assembly
                 string resName = assembly.ResourceName;
-                var stream = Asm.GetManifestResourceStream(resName);    //not sure if reflection is the best way
+                var stream = Ctx.Assembly.GetManifestResourceStream(resName);    //not sure if reflection is the best way
                 byte[] buffer = new byte[stream.Length];
                 stream.Read(buffer, 0, (int)stream.Length);
 
