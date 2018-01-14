@@ -13,8 +13,10 @@ namespace EazFixer.Processors
     internal class AssemblyResolver : ProcessorBase
     {
         private TypeDef _assemblyResolver;
+        private MethodDef _moveNext;
         private List<EmbeddedAssemblyInfo> _assemblies;
         private MethodInfo _decrypter;
+        private MethodInfo _prefixRemover;
 
         protected override void InitializeInternal()
         {
@@ -26,24 +28,30 @@ namespace EazFixer.Processors
                                 ?? throw new Exception("Could not find assembly extraction helper");
             var enumerable = extractionApi.NestedTypes.SingleOrDefault(CanBeEnumerable)
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies iterator");
-            var moveNext = enumerable.Methods.SingleOrDefault(CanBeMoveNext)
+            _moveNext = enumerable.Methods.SingleOrDefault(CanBeMoveNext)
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies's MoveNext");
-            var str = moveNext.Body.Instructions.SingleOrDefault(a => a.OpCode.Code == Code.Ldstr)?.Operand as string
-                                ?? throw new Exception("Could not find assembly list");
 
-            _assemblies = EnumerateEmbeddedAssemblies(str).ToList();
-
-            //only if _assemblies.Any(a => a.Encrypted)?
-            //find the decryption method
-            var decryptionMethodDef = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod)
+            //find the decryption methods
+            var dec1 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod1)
                                 ?? throw new Exception("Could not find decryption method");
-            _decrypter = Utils.FindMethod(Ctx.Assembly, decryptionMethodDef, new[] {typeof(byte[])});
+            _decrypter = Utils.FindMethod(Ctx.Assembly, dec1, new[] {typeof(byte[])});
+
+            var dec2 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod2);       //this one may be null
+            if (dec2 != null)
+                _prefixRemover = Utils.FindMethod(Ctx.Assembly, dec2, new[] {typeof(byte[])});
         }
 
         protected override void ProcessInternal()
         {
             //get path to write to
             var path = Path.GetDirectoryName(Ctx.Assembly.Location);
+
+            //get assemblies
+            //this happens here because we need string to be decrypted
+            if (!Ctx.Get<StringFixer>().Processed) throw new Exception("StringFixer is required!");
+            var str = _moveNext.Body.Instructions.SingleOrDefault(a => a.OpCode.Code == Code.Ldstr)?.Operand as string
+                      ?? throw new Exception("Could not find assembly list");
+            _assemblies = EnumerateEmbeddedAssemblies(str).Where(a => !a.Fullname.StartsWith("#A,A,")).ToList();    //TODO: investigate prefix
 
             //get the resource resolver and figure out which assemblies we shouldn't extract
             var res = Ctx.Get<ResourceResolver>();
@@ -60,7 +68,11 @@ namespace EazFixer.Processors
 
                 //if the assembly is encrypted: decrypt it
                 if (assembly.Encrypted) {
-                    Debug.WriteLine("Decrypting assembly...");
+                    _decrypter.Invoke(null, new object[] {buffer});
+                }
+                //if the assembly is prefixed: remove it
+                if (assembly.Prefixed) {
+                    if (_prefixRemover == null) throw new Exception("Assembly if prefixed/pumped, but couldn't find prefix remover type");
                     _decrypter.Invoke(null, new object[] {buffer});
                 }
 
@@ -83,7 +95,8 @@ namespace EazFixer.Processors
             }
 
             //remove types
-            Ctx.Module.Types.Remove(_assemblyResolver);
+            if (_prefixRemover == null) //if it is present, more stuff is going on that I don't know about (better be safe)
+                Ctx.Module.Types.Remove(_assemblyResolver);
 
             //remove resources
             foreach (var assembly in _assemblies)
@@ -94,22 +107,24 @@ namespace EazFixer.Processors
         private bool CanBeAssemblyResolver(TypeDef t)
         {
             if (t.Methods.Count(a => a.IsPinvokeImpl) != 1) return false;   //MoveFileEx
-            if (t.NestedTypes.Count != 4) return false; //AssemblyCache, AssemblyRepresentation, ExtractionApi, RNG
+            if (t.NestedTypes.Count < 4) return false; //AssemblyCache, AssemblyRepresentation, ExtractionApi, RNG
 
             foreach (MethodDef m in t.Methods.Where(a => a.HasBody && a.Body.HasInstructions)) {
                 //adds AssemblyResolver
                 bool addsResolver = m.Body.Instructions.Any(i => i.OpCode.Code == Code.Callvirt && i.Operand is MemberRef mr && mr.Name == "add_AssemblyResolve");
-                if (addsResolver) return true;
+                if (addsResolver)
+                    return true;
             }
 
             return false;
         }
 
-        private bool CanBeExtractionApi(TypeDef t) => t.HasNestedTypes;
-        private bool CanBeEnumerable(TypeDef t) => t.HasInterfaces;
+        private bool CanBeExtractionApi(TypeDef t) => t.HasNestedTypes && t.IsAbstract && t.IsSealed && t.NestedTypes.Any(CanBeEnumerable);
+        private bool CanBeEnumerable(TypeDef t) => t.HasInterfaces && t.Interfaces.Any(a => a.Interface.Name == "IEnumerable");
         private bool CanBeMoveNext(MethodDef m) => m.Overrides.Any(a => a.MethodDeclaration.FullName == "System.Boolean System.Collections.IEnumerator::MoveNext()");
 
-        private bool CanBeDecryptionMethod(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])";
+        private bool CanBeDecryptionMethod1(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && m.IsNoInlining;
+        private bool CanBeDecryptionMethod2(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && !m.IsNoInlining;
 
         private static IEnumerable<EmbeddedAssemblyInfo> EnumerateEmbeddedAssemblies(string text)
         {
@@ -129,6 +144,7 @@ namespace EazFixer.Processors
                     resName = resName.Substring(posPipe + 1);
 
                     asm.Encrypted = flags.IndexOf('a') != -1;
+                    asm.Prefixed = flags.IndexOf('b') != -1;
                     asm.MustLoadfromDisk = flags.IndexOf('c') != -1;
                 }
                 asm.ResourceName = resName;
@@ -159,6 +175,7 @@ namespace EazFixer.Processors
             public string FullnameBase64;
             public string ResourceName;
             public bool Encrypted;
+            public bool Prefixed;
             public bool MustLoadfromDisk;
             public string FilenameBase64;
             private string _fullname;

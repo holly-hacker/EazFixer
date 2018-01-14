@@ -24,7 +24,7 @@ namespace EazFixer.Processors
             try {
                 InitializeInternal();
             } catch (Exception e) {
-                _errorInitialized = e.Message;
+                _errorInitialized = "Init error: " + e.Message;
             }
         }
 
