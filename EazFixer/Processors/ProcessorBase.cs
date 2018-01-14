@@ -42,7 +42,7 @@ namespace EazFixer.Processors
             try {
                 CleanupInternal();
             } catch (Exception e) {
-                _errorCleanup = e.Message;
+                _errorCleanup = "Cleanup error: " + e.Message;
             }
         }
 
