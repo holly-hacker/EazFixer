@@ -12,6 +12,7 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 ### Considered features:
 * Code and data virtualization
 * Entrypoint obfuscation
+* Useless code obfuscation (may only be present in Eazfuscator binary itself)
 
 ### Not considered:
 * Symbol renaming (usually the symbol names are unrecoverable)
