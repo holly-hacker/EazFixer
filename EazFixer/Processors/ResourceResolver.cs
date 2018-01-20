@@ -27,7 +27,7 @@ namespace EazFixer.Processors
         protected override void ProcessInternal()
         {
             //initialize all the resources
-            var mi = Utils.FindMethod(Ctx.Assembly, _initMethod, new Type[0]);
+            var mi = Utils.FindMethod(Ctx.Assembly, _initMethod, new Type[0]) ?? throw new Exception("Could not find init method through reflection");
             mi.Invoke(null, new object[0]);
 
             //get the dictionary we just initialized

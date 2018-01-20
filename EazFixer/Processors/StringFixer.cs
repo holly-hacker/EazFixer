@@ -23,7 +23,7 @@ namespace EazFixer.Processors
             Dictionary<int, string> dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
-            var decrypter = Utils.FindMethod(Ctx.Assembly, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method again");
+            var decrypter = Utils.FindMethod(Ctx.Assembly, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method through reflection");
 
             //store it so we can use it in the stacktrace patch
             Harmony.PatchStackTraceGetMethod.MethodToReplace = decrypter;

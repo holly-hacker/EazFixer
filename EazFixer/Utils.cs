@@ -27,8 +27,9 @@ namespace EazFixer
             flags |= meth.IsPublic ? BindingFlags.Public : BindingFlags.NonPublic;
             flags |= meth.IsStatic ? BindingFlags.Static : BindingFlags.Instance;
 
+            //BUG: this can fail
             Type type = ass.GetType(meth.DeclaringType.ReflectionFullName);
-            return type.GetMethod(meth.Name, flags, null, args, null);
+            return type?.GetMethod(meth.Name, flags, null, args, null);
         }
 
         public static bool LookForReferences(ModuleDef mod, MethodDef meth) //methoddef can be generalized

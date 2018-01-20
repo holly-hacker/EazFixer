@@ -34,11 +34,13 @@ namespace EazFixer.Processors
             //find the decryption methods
             var dec1 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod1)
                                 ?? throw new Exception("Could not find decryption method");
-            _decrypter = Utils.FindMethod(Ctx.Assembly, dec1, new[] {typeof(byte[])});
+            _decrypter = Utils.FindMethod(Ctx.Assembly, dec1, new[] {typeof(byte[])}) 
+                ?? throw new Exception("Couldn't find decrypter through reflection");
 
             var dec2 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod2);       //this one may be null
             if (dec2 != null)
-                _prefixRemover = Utils.FindMethod(Ctx.Assembly, dec2, new[] {typeof(byte[])});
+                _prefixRemover = Utils.FindMethod(Ctx.Assembly, dec2, new[] {typeof(byte[])})
+                                 ?? throw new Exception("Couldn't find prefix remover through reflection");
         }
 
         protected override void ProcessInternal()
