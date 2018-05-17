@@ -57,8 +57,12 @@ namespace EazFixer.Processors
 
             //get the resource resolver and figure out which assemblies we shouldn't extract
             var res = Ctx.Get<ResourceResolver>();
-            var asmEnumerator = _assemblies.Where(a => res.ResourceAssemblies.All(b 
-                => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)));
+            if (res.ResourceAssemblies == null) { //If there is no resources but exists assemblies
+                var asmEnumerator = _assemblies;
+            } else {
+                var asmEnumerator = _assemblies.Where(a => res.ResourceAssemblies.All(b 
+                    => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)));
+            }
 
             foreach (var assembly in asmEnumerator)
             {
@@ -74,8 +78,8 @@ namespace EazFixer.Processors
                 }
                 //if the assembly is prefixed: remove it
                 if (assembly.Prefixed) {
-                    if (_prefixRemover == null) throw new Exception("Assembly if prefixed/pumped, but couldn't find prefix remover type");
-                    _decrypter.Invoke(null, new object[] {buffer});
+                    if (_prefixRemover == null) throw new Exception("Assembly is prefixed/pumped, but couldn't find prefix remover type");
+                    buffer = (byte[])_prefixRemover.Invoke(null, new object[] {buffer}); //unpack assembly and save in buffer
                 }
 
                 File.WriteAllBytes(Path.Combine(path, assembly.Filename), buffer);
