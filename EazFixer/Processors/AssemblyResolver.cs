@@ -57,6 +57,10 @@ namespace EazFixer.Processors
 
             //get the resource resolver and figure out which assemblies we shouldn't extract
             var res = Ctx.Get<ResourceResolver>();
+            
+            //check resource resolver output. It could be null while assemblies willn't null
+            if (res.ResourceAssemblies == null) return;
+            
             var asmEnumerator = _assemblies.Where(a => res.ResourceAssemblies.All(b 
                 => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)));
 
