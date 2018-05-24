@@ -39,7 +39,7 @@ namespace EazFixer.Processors
                     var curr = meth.Body.Instructions[i];
 
                     //if they invoke the string decrypter method with an int parameter
-                    if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && new SigComparer().Equals(md, _decrypterMethod))
+                    if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && md.MDToken == _decrypterMethod.MDToken)
                     {
                         //get the int parameter, and get the resulting string from either cache or invoking the decrypter method
                         int val = prev.GetLdcI4Value();
