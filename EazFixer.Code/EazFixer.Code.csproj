@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BC79517F-42D3-4311-8E22-979FF061DF7F}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>EazFixer</RootNamespace>
-    <AssemblyName>EazFixer</AssemblyName>
+    <ProjectGuid>{4E87DFAB-1C03-4E8A-97D4-829593F61FDA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>EazFixer.Code</RootNamespace>
+    <AssemblyName>EazFixer.Code</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -23,7 +23,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>3</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
@@ -35,6 +35,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -47,16 +52,30 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="EazContext.cs" />
+    <Compile Include="Other\CommandLine.cs" />
+    <Compile Include="Other\Logger.cs" />
+    <Compile Include="Other\Runtime.cs" />
+    <Compile Include="Processors\AssemblyResolver.cs" />
+    <Compile Include="ProcessorBase.cs" />
+    <Compile Include="Processors\ResourceResolver.cs" />
+    <Compile Include="Processors\StringResolver.cs" />
+    <Compile Include="Entrypoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Other\Misc.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EazFixer.Code\EazFixer.Code.csproj">
-      <Project>{4e87dfab-1c03-4e8a-97d4-829593f61fda}</Project>
-      <Name>EazFixer.Code</Name>
+    <ProjectReference Include="..\dnlib\src\dnlib.csproj">
+      <Project>{fdfc1237-143f-4919-8318-4926901f4639}</Project>
+      <Name>dnlib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Harmony\Harmony\Harmony.csproj">
+      <Project>{46c98320-9e97-4e4f-b217-fcf15547f8b9}</Project>
+      <Name>Harmony</Name>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
