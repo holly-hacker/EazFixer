@@ -22,10 +22,10 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 
 ## Usage
 Call it from the command line with -f
-EazFixer.exe -f MyFile.exe
+`EazFixer.exe -f MyFile.exe`
 
 Custom output file can be specified with -o param but by default the output will be Filename-eazfix.exe
-EazFixer.exe -f MyFile.exe -o OutFile.exe
+`EazFixer.exe -f MyFile.exe -o OutFile.exe`
 
 If your assembly is protected with control-flow obfuscation, run it through [de4dot](https://github.com/0xd4d/de4dot) with the
 `--only-cflow-deob` flag first.
