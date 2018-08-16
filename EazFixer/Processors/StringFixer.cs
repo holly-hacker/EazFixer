@@ -20,7 +20,7 @@ namespace EazFixer.Processors
         protected override void ProcessInternal()
         {
             //a dictionary to cache all strings
-            Dictionary<int, string> dictionary = new Dictionary<int, string>();
+            var dictionary = new Dictionary<int, string>();
 
             //get the decrypter method in a way in which we can invoke it
             var decrypter = Utils.FindMethod(Ctx.Assembly, _decrypterMethod, new[] { typeof(int) }) ?? throw new Exception("Couldn't find decrypter method through reflection");
@@ -45,6 +45,9 @@ namespace EazFixer.Processors
                         int val = prev.GetLdcI4Value();
                         if (!dictionary.ContainsKey(val))
                             dictionary[val] = (string) decrypter.Invoke(null, new object[] {val});
+                            
+                        // check if str == .ctor due to eaz using string decryptor to call constructors
+                        if (dictionary[val] == ".ctor") continue;
 
                         //replace the instructions with the string
                         prev.OpCode = OpCodes.Nop;
@@ -57,6 +60,10 @@ namespace EazFixer.Processors
 
         protected override void CleanupInternal()
         {
+            // New versions of EazFuscator do not allow you to remove this
+            // with extra options enabled
+        
+            /*
             //ensure that the string decryptor isn't called anywhere
             if (Utils.LookForReferences(Ctx.Module, _decrypterMethod))
                 throw new Exception("String decrypter is still being called");
@@ -64,6 +71,7 @@ namespace EazFixer.Processors
             //remove the string decryptor class
             var stringType = _decrypterMethod.DeclaringType;
             Ctx.Module.Types.Remove(stringType);
+            */
         }
 
         private static bool CanBeStringMethod(MethodDef method)
@@ -84,6 +92,11 @@ namespace EazFixer.Processors
             if (!method.Body.Instructions.Any(a => a.OpCode.Code == Code.Call && a.Operand is MethodDef m
                                                   && m.MethodSig.ToString() == "System.String (System.Int32,System.Boolean)"))
                 return false;
+                
+            //is not private or public
+            if (method.IsPrivate || method.IsPublic)
+                return false;
+
 
             return true;
         }
