@@ -16,7 +16,6 @@ namespace EazFixer.Processors
         private string _errorProcessed;
         private string _errorCleanup;
 
-
         public void Initialize(EazContext ctx)
         {
             Ctx = ctx;
@@ -40,7 +39,7 @@ namespace EazFixer.Processors
         public void Cleanup()
         {
             try {
-                CleanupInternal();
+                if (!Flags.KeepTypes) CleanupInternal();
             } catch (Exception e) {
                 _errorCleanup = "Cleanup error: " + e.Message;
             }
