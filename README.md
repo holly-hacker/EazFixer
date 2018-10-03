@@ -21,11 +21,20 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 * Assemblies merging (doesn't seem probable, especially with symbol renaming)
 
 ## Usage
-For now, just call it from the commandline and give it your obfsucated file as parameter. Or, if you are scared of typing in commands, 
-just drag your obfuscated on the exe and let it run.
+Call from the command line or drag and drop the file on and let it run or use the command line flag `--file`.
 
 If your assembly is protected with control-flow obfuscation, run it through [de4dot](https://github.com/0xd4d/de4dot) with the
 `--only-cflow-deob` flag first.
+
+* --file path
+* --keep-types
+* --virt-fix
+
+The flag `--file` is used for the input file.
+The flag `--keep-types` is similar to the de4dot flag, Keeps obfuscator types and assemblies.
+The flag `--virt-fix` keeps certain parts obfuscated to stay working with [virtualized](https://help.gapotchenko.com/eazfuscator.net/30/virtualization) assemblies.
+
+example: `EazFixer.exe --file test.exe --keep-types`
 
 ## Building
 Clone the repository recursively and use the latest version of Visual Studio (2017, at the time of writing) to build.

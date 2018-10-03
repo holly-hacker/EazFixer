@@ -47,7 +47,7 @@ namespace EazFixer.Processors
                             dictionary[val] = (string) decrypter.Invoke(null, new object[] {val});
                             
                         // check if str == .ctor due to eaz using string decryptor to call constructors
-                        if (dictionary[val] == ".ctor") continue;
+                        if (dictionary[val] == ".ctor" && Flags.VirtFix) continue;
 
                         //replace the instructions with the string
                         prev.OpCode = OpCodes.Nop;
@@ -60,10 +60,10 @@ namespace EazFixer.Processors
 
         protected override void CleanupInternal()
         {
-            // New versions of EazFuscator do not allow you to remove this
-            // with extra options enabled
-        
-            /*
+            //check if virtfix is active so ignore cleaning
+            if (Flags.VirtFix)
+                throw new Exception("VirtFix enabled, Cannot remove method");
+
             //ensure that the string decryptor isn't called anywhere
             if (Utils.LookForReferences(Ctx.Module, _decrypterMethod))
                 throw new Exception("String decrypter is still being called");
@@ -71,7 +71,6 @@ namespace EazFixer.Processors
             //remove the string decryptor class
             var stringType = _decrypterMethod.DeclaringType;
             Ctx.Module.Types.Remove(stringType);
-            */
         }
 
         private static bool CanBeStringMethod(MethodDef method)

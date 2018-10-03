@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -17,6 +18,8 @@ namespace EazFixer
 
         public EazContext(string file, ProcessorBase[] procs)
         {
+            if (!File.Exists(file)) throw new Exception($"Failed (File: {file} does not exist)");
+
             Module = ModuleDefMD.Load(file);
             Assembly = Assembly.LoadFile(file);
             Processors = procs;
