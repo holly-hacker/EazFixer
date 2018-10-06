@@ -7,7 +7,8 @@ namespace EazFixer
 {
     internal class Program
     {
-        private static int Main(string[] args) {
+        private static int Main(string[] args)
+        {
             CommandLine.CommandLineOption[] options = null;
 
             try
@@ -15,17 +16,13 @@ namespace EazFixer
                 if (args.Length == 1)
                 {
                     Flags.InFile = Path.GetFullPath(args[0]);
-                    Flags.OutFile = Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile);
                 }
                 else if (CommandLine.Parse(args, ref options))
                 {
                     foreach (var opt in options)
                     {
                         if (opt.Name == "--file")
-                        {
-                            Flags.InFile = (string) opt.Value != string.Empty ? Path.GetFullPath((string) opt.Value) : throw new Exception("Filepath not defined!");
-                            Flags.OutFile = Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile);
-                        }
+                            Flags.InFile = (string)opt.Value != string.Empty ? Path.GetFullPath((string)opt.Value) : throw new Exception("Filepath not defined!");
 
                         if (opt.Name == "--virt-fix")
                             Flags.VirtFix = true;
@@ -39,8 +36,12 @@ namespace EazFixer
                     return Exit("Please pass me a file.", true);
                 }
 
+                // Determine the output path if not given
+                Flags.OutFile = Path.Combine(Path.GetDirectoryName(Flags.InFile) ?? "", Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile));
+
                 //order is important! AssemblyResolver has to be after StringFixer and ResourceResolver
-                var ctx = new EazContext(Flags.InFile != string.Empty ? Flags.InFile : throw new Exception("Filepath not defined!"), new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver()});
+                var ctx = new EazContext(!string.IsNullOrEmpty(Flags.InFile) ? Flags.InFile : throw new Exception("Filepath not defined!"), 
+                    new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver()});
 
                 Console.WriteLine("Executing memory patches...");
                 Harmony.Patch();
