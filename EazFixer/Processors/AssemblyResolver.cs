@@ -16,7 +16,7 @@ namespace EazFixer.Processors
         private MethodDef _moveNext;
         private List<EmbeddedAssemblyInfo> _assemblies;
         private MethodInfo _decrypter;
-        private MethodInfo _prefixRemover;
+        private MethodInfo _decompressor;
 
         protected override void InitializeInternal()
         {
@@ -37,9 +37,9 @@ namespace EazFixer.Processors
             _decrypter = Utils.FindMethod(Ctx.Assembly, dec1, new[] {typeof(byte[])}) 
                 ?? throw new Exception("Couldn't find decrypter through reflection");
 
-            var dec2 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecryptionMethod2);       //this one may be null
+            var dec2 = _assemblyResolver.Methods.SingleOrDefault(CanBeDecompressionMethod);       //this one may be null
             if (dec2 != null)
-                _prefixRemover = Utils.FindMethod(Ctx.Assembly, dec2, new[] {typeof(byte[])})
+                _decompressor = Utils.FindMethod(Ctx.Assembly, dec2, new[] {typeof(byte[])})
                                  ?? throw new Exception("Couldn't find prefix remover through reflection");
         }
 
@@ -57,8 +57,9 @@ namespace EazFixer.Processors
 
             //get the resource resolver and figure out which assemblies we shouldn't extract
             var res = Ctx.Get<ResourceResolver>();
-            var asmEnumerator = _assemblies.Where(a => res.ResourceAssemblies.All(b 
-                => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)));
+            IEnumerable<EmbeddedAssemblyInfo> asmEnumerator = res.Initialized
+                ? _assemblies.Where(a => res.ResourceAssemblies.All(b => !string.Equals(b.GetName().Name, new AssemblyName(a.Fullname).Name, StringComparison.CurrentCultureIgnoreCase)))
+                : _assemblies;
 
             foreach (var assembly in asmEnumerator)
             {
@@ -73,9 +74,9 @@ namespace EazFixer.Processors
                     _decrypter.Invoke(null, new object[] {buffer});
                 }
                 //if the assembly is prefixed: remove it
-                if (assembly.Prefixed) {
-                    if (_prefixRemover == null) throw new Exception("Assembly if prefixed/pumped, but couldn't find prefix remover type");
-                    _decrypter.Invoke(null, new object[] {buffer});
+                if (assembly.Compressed) {
+                    if (_decompressor == null) throw new Exception("Assembly is compressed, but couldn't find decompressor method");
+                    _decompressor.Invoke(null, new object[] {buffer});
                 }
 
                 File.WriteAllBytes(Path.Combine(path, assembly.Filename), buffer);
@@ -97,7 +98,7 @@ namespace EazFixer.Processors
             }
 
             //remove types
-            if (_prefixRemover == null) //if it is present, more stuff is going on that I don't know about (better be safe)
+            if (_decompressor == null) //if it is present, more stuff is going on that I don't know about (better be safe)
                 Ctx.Module.Types.Remove(_assemblyResolver);
 
             //remove resources
@@ -126,7 +127,7 @@ namespace EazFixer.Processors
         private bool CanBeMoveNext(MethodDef m) => m.Overrides.Any(a => a.MethodDeclaration.FullName == "System.Boolean System.Collections.IEnumerator::MoveNext()");
 
         private bool CanBeDecryptionMethod1(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && m.IsNoInlining;
-        private bool CanBeDecryptionMethod2(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && !m.IsNoInlining;
+        private bool CanBeDecompressionMethod(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && !m.IsNoInlining;
 
         private static IEnumerable<EmbeddedAssemblyInfo> EnumerateEmbeddedAssemblies(string text)
         {
@@ -146,7 +147,7 @@ namespace EazFixer.Processors
                     resName = resName.Substring(posPipe + 1);
 
                     asm.Encrypted = flags.IndexOf('a') != -1;
-                    asm.Prefixed = flags.IndexOf('b') != -1;
+                    asm.Compressed = flags.IndexOf('b') != -1;
                     asm.MustLoadfromDisk = flags.IndexOf('c') != -1;
                 }
                 asm.ResourceName = resName;
@@ -156,6 +157,7 @@ namespace EazFixer.Processors
             }
         }
 
+        [DebuggerDisplay("{" + nameof(Fullname) + "}")]
         internal class EmbeddedAssemblyInfo
         {
             public string Fullname {
@@ -177,7 +179,7 @@ namespace EazFixer.Processors
             public string FullnameBase64;
             public string ResourceName;
             public bool Encrypted;
-            public bool Prefixed;
+            public bool Compressed;
             public bool MustLoadfromDisk;
             public string FilenameBase64;
             private string _fullname;
