@@ -4,21 +4,22 @@ A deobfuscation tool for Eazfuscator.
 ## Description
 EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/eazfuscator.net), a commercial .NET obfuscator. For a list of features, see the list below.
 
-### Implemented features:
+### Implemented fixes:
 * String encryption
 * Resource encryption
 * Assembly embedding
 
-### Considered features:
-* Code and data virtualization
+### Not implemented, may be added in the future:
 * Entrypoint obfuscation
-* Useless code obfuscation (may only be present in Eazfuscator binary itself)
+* Code virtualization (too large of a problem for now, don't open issues related to it)
+* Data virtualization
 
-### Not considered:
-* Symbol renaming (usually the symbol names are unrecoverable)
+### Out of scope:
+* Symbol renaming (symbol names are either unrecoverable or encrypted. For symbol decryption in case of a known key, see [EazDecode](https://github.com/HoLLy-HaCKeR/EazDecode))
 * Automatic code optimization (not an anti-feature!)
 * Code control flow obfuscation (I didn't have any problems with my samples in dnSpy)
 * Assemblies merging (doesn't seem probable, especially with symbol renaming)
+* Control flow obfuscation (use de4dot)
 
 ## Usage
 Call from the command line or drag and drop the file on and let it run or use the command line flag `--file`.
@@ -46,6 +47,11 @@ deobfuscator like [de4dot](https://github.com/0xd4d/de4dot). If your version is 
 
 Also, I will not help you use this program. Consider it for advanced users only. If you do run into a problem and are sure it is a bug, 
 feel free to submit an issue but I cannot guarantee I will fix it.
+
+## Related projects
+- [EazDecode](https://github.com/HoLLy-HaCKeR/EazDecode), for decrypting encrypted symbol names in case of a known encryption key.
+- [eazdevirt](https://github.com/saneki/eazdevirt), a tool for devirtualizing older version of EazFuscator.
+- [eazdevirt fork](https://github.com/HoLLy-HaCKeR/eazdevirt), my abandoned fork of eazdevirt, may work slightly better on newer samples.
 
 ## Credits
 This tool uses the following (open source) software:
