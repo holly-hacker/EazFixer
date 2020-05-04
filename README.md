@@ -11,10 +11,10 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 
 ### Not implemented, may be added in the future:
 * Entrypoint obfuscation
-* Code virtualization (too large of a problem for now, don't open issues related to it)
 * Data virtualization
 
 ### Out of scope:
+* Code virtualization (separate project)
 * Symbol renaming (symbol names are either unrecoverable or encrypted. For symbol decryption in case of a known key, see [EazDecode](https://github.com/HoLLy-HaCKeR/EazDecode))
 * Automatic code optimization (not an anti-feature!)
 * Code control flow obfuscation (I didn't have any problems with my samples in dnSpy)
@@ -38,7 +38,7 @@ The flag `--virt-fix` keeps certain parts obfuscated to stay working with [virtu
 example: `EazFixer.exe --file test.exe --keep-types`
 
 ## Building
-Clone the repository recursively and use the latest version of Visual Studio (2017, at the time of writing) to build.
+Clone the repository and use the latest version of Visual Studio (2019, at the time of writing).
 
 ## Support
 EazFixer is (and will always be) targeted at the latest version of Eazfuscator. If your version is not supported, try a more universal 
