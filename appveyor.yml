@@ -8,8 +8,8 @@ build:
   verbosity: minimal
 artifacts:
 - path: EazFixer\bin\Release\net472
-  name: .NET 4.7.2
+  name: net472
   type: zip
 - path: EazFixer\bin\Release\netcoreapp3.1
-  name: .NET Core
+  name: netcoreapp31
   type: zip
