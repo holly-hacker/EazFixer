@@ -58,6 +58,5 @@ feel free to submit an issue but I cannot guarantee I will fix it.
 
 ## Credits
 This tool uses the following (open source) software:
-* [dnlib](https://github.com/0xd4d/dnlib) by [0xd4d](https://github.com/0xd4d), license under the MIT license, for reading/writing assemblies.
-* a fork of [Harmony](https://github.com/hcoona/Harmony) by [hcoona](https://github.com/hcoona), licensed under the MIT license, to patch runtime methods.  
-The original [Harmony](https://github.com/pardeike/Harmony) is by [Andreas Pardeike](https://github.com/pardeike), but does not unprotect the memory pages it writes to, making the program crash.
+* [dnlib](https://github.com/0xd4d/dnlib) by [0xd4d](https://github.com/0xd4d), licensed under the MIT license, for reading/writing assemblies.
+* [Harmony](https://github.com/pardeike/Harmony) by [Andreas Pardeike](https://github.com/pardeike), licensed under the MIT license, for patching the stacktrace which allows for reflection invocation to be used.
