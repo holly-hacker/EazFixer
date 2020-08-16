@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
-using Harmony;
+using HarmonyLib;
 
 namespace EazFixer
 {
@@ -9,7 +9,7 @@ namespace EazFixer
     {
         public static void Patch()
         {
-            HarmonyInstance h = HarmonyInstance.Create("holly.eazfixer");
+            var h = new HarmonyLib.Harmony("holly.eazfixer");
             h.PatchAll(Assembly.GetExecutingAssembly());
         }
 

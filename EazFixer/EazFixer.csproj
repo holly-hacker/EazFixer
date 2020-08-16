@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net462</TargetFramework>
     <Copyright>Copyright © HoLLy</Copyright>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="dnlib" Version="3.3.2" />
-    <PackageReference Include="Lib.Harmony" Version="1.2.0.1" />
+    <PackageReference Include="Lib.Harmony" Version="2.0.2" />
   </ItemGroup>
 </Project>
