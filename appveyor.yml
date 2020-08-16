@@ -1,0 +1,10 @@
+version: 1.0.{build}
+image: Visual Studio 2019
+configuration: Release
+platform: Any CPU
+build:
+  verbosity: minimal
+artifacts:
+- path: EazFixer\bin\Release\net472\*
+  name: net472
+  type: zip
