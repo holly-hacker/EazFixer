@@ -1,10 +1,15 @@
-version: 1.0.{build}
+version: b{build}
 image: Visual Studio 2019
 configuration: Release
 platform: Any CPU
+before_build:
+- cmd: nuget restore
 build:
   verbosity: minimal
 artifacts:
 - path: EazFixer\bin\Release\net472\*
-  name: net472
+  name: .NET 4.7.2
+  type: zip
+- path: EazFixer\bin\Release\netcoreapp3.1\*
+  name: .NET Core
   type: zip
