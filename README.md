@@ -1,5 +1,8 @@
-# EazFixer
+# EazFixer [![Build status](https://ci.appveyor.com/api/projects/status/5i5m8d7qv97ywgmc?svg=true)](https://ci.appveyor.com/project/HoLLy-HaCKeR/eazfixer)
 A deobfuscation tool for Eazfuscator.
+
+## Downloading
+You can download the latest master build at [AppVeyor](https://ci.appveyor.com/project/HoLLy-HaCKeR/eazfixer/build/artifacts). If there was no commit in the last 6 months, you will have to build it yourself. Please do not open issues asking for me to build it for you.
 
 ## Description
 EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/eazfuscator.net), a commercial .NET obfuscator. For a list of features, see the list below.
