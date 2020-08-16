@@ -44,7 +44,7 @@ namespace EazFixer
                     new ProcessorBase[] {new StringFixer(), new ResourceResolver(), new AssemblyResolver()});
 
                 Console.WriteLine("Executing memory patches...");
-                Harmony.Patch();
+                StacktracePatcher.Patch();
 
                 Console.WriteLine("Initializing modules...");
                 foreach (ProcessorBase proc in ctx)

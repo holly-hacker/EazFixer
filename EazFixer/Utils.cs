@@ -6,7 +6,7 @@ using dnlib.DotNet;
 
 namespace EazFixer
 {
-    internal static class Utils
+    public static class Utils
     {
         public static IEnumerable<MethodDef> GetMethodsRecursive(ModuleDef t) => t.Types.SelectMany(GetMethodsRecursive);
         public static IEnumerable<MethodDef> GetMethodsRecursive(TypeDef type)
