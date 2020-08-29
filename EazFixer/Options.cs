@@ -12,10 +12,8 @@ namespace EazFixer
         [Option("out")]
         public string OutFile { get; set; }
 
-
         [Option("keep-types")]
         public bool KeepTypes { get; set; }
-
 
         [Option("virt-fix")]
         public bool VirtFix { get; set; }

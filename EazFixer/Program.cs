@@ -95,7 +95,10 @@ namespace EazFixer
             Flags.VirtFix = args.VirtFix;
 
             if (args.OutFile != default)
+            {
                 Flags.OutFile = args.OutFile;
+                return;
+            }
 
             // Determine the output path if not given
             Flags.OutFile = Path.Combine(Path.GetDirectoryName(Flags.InFile) ?? "", 
