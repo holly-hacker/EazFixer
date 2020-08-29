@@ -9,32 +9,9 @@ namespace EazFixer
     {
         private static int Main(string[] args)
         {
-            CommandLine.CommandLineOption[] options = null;
-
             try
             {
-                if (args.Length == 1)
-                {
-                    Flags.InFile = Path.GetFullPath(args[0]);
-                }
-                else if (CommandLine.Parse(args, ref options))
-                {
-                    foreach (var opt in options)
-                    {
-                        if (opt.Name == "--file")
-                            Flags.InFile = (string)opt.Value != string.Empty ? Path.GetFullPath((string)opt.Value) : throw new Exception("Filepath not defined!");
-
-                        if (opt.Name == "--virt-fix")
-                            Flags.VirtFix = true;
-
-                        if (opt.Name == "--keep-types")
-                            Flags.KeepTypes = true;
-                    }
-                }
-                else
-                {
-                    return Exit("Please pass me a file.", true);
-                }
+                OptionsParser.SetFlags(args);
 
                 // Determine the output path if not given
                 Flags.OutFile = Path.Combine(Path.GetDirectoryName(Flags.InFile) ?? "", Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile));
