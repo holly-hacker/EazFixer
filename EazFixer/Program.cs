@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using CommandLine;
 using EazFixer.Processors;
 
 namespace EazFixer
@@ -9,35 +11,11 @@ namespace EazFixer
     {
         private static int Main(string[] args)
         {
-            CommandLine.CommandLineOption[] options = null;
-
             try
             {
-                if (args.Length == 1)
-                {
-                    Flags.InFile = Path.GetFullPath(args[0]);
-                }
-                else if (CommandLine.Parse(args, ref options))
-                {
-                    foreach (var opt in options)
-                    {
-                        if (opt.Name == "--file")
-                            Flags.InFile = (string)opt.Value != string.Empty ? Path.GetFullPath((string)opt.Value) : throw new Exception("Filepath not defined!");
-
-                        if (opt.Name == "--virt-fix")
-                            Flags.VirtFix = true;
-
-                        if (opt.Name == "--keep-types")
-                            Flags.KeepTypes = true;
-                    }
-                }
-                else
-                {
-                    return Exit("Please pass me a file.", true);
-                }
-
-                // Determine the output path if not given
-                Flags.OutFile = Path.Combine(Path.GetDirectoryName(Flags.InFile) ?? "", Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile));
+                Parser.Default.ParseArguments<Options>(args)
+                    .WithParsed(handleOptions)
+                    .WithNotParsed(handleParsingError);
 
                 //order is important! AssemblyResolver has to be after StringFixer and ResourceResolver
                 var ctx = new EazContext(!string.IsNullOrEmpty(Flags.InFile) ? Flags.InFile : throw new Exception("Filepath not defined!"), 
@@ -108,6 +86,27 @@ namespace EazFixer
                 Console.ReadKey();
             }
             return 0;
+        }
+
+        private static void handleOptions(Options args)
+        {
+            Flags.InFile = args.InFile;
+            Flags.KeepTypes = args.KeepTypes;
+            Flags.VirtFix = args.VirtFix;
+
+            if (args.OutFile != default)
+            {
+                Flags.OutFile = args.OutFile;
+                return;
+            }
+
+            // Determine the output path if not given
+            Flags.OutFile = Path.Combine(Path.GetDirectoryName(Flags.InFile) ?? "", 
+                Path.GetFileNameWithoutExtension(Flags.InFile) + "-eazfix" + Path.GetExtension(Flags.InFile));
+        }
+        private static void handleParsingError(IEnumerable<Error> obj)
+        {
+            throw new FormatException();
         }
     }
 }
