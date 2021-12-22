@@ -4,15 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using dnlib.DotNet;
+using AsmResolver.DotNet;
 using EazFixer.Processors;
 
 namespace EazFixer
 {
     internal class EazContext : IEnumerable<ProcessorBase>
     {
-        public ModuleDef Module;
+        public ModuleDefinition Module;
         public Assembly Assembly;
         public ProcessorBase[] Processors;
 
@@ -20,7 +19,7 @@ namespace EazFixer
         {
             if (!File.Exists(file)) throw new Exception($"Failed (File: {file} does not exist)");
 
-            Module = ModuleDefMD.Load(file);
+            Module = ModuleDefinition.FromFile(file);
             Assembly = Assembly.LoadFile(file);
             Processors = procs;
         }

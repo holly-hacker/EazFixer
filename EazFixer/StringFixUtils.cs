@@ -1,33 +1,33 @@
 ﻿using System.Linq;
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
+using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
 
 namespace EazFixer
 {
     public static class StringFixUtils
     {
-        public static MethodDef FindStringDecryptMethod(ModuleDef module)
+        public static MethodDefinition FindStringDecryptMethod(ModuleDefinition module)
         {
             return Utils.GetMethodsRecursive(module).SingleOrDefault(CanBeStringMethod);
         }
 
-        private static bool CanBeStringMethod(MethodDef method)
+        private static bool CanBeStringMethod(MethodDefinition method)
         {
             //internal and static
             if (!method.IsStatic || !method.IsAssembly)
                 return false;
 
             //takes int, returns string
-            if (method.MethodSig.ToString() != "System.String (System.Int32)")
+            if (method.Signature.ToString() != "System.String *(System.Int32)")
                 return false;
 
             //actually a proper method, not abstract or from an interface
-            if (!method.HasBody || !method.Body.HasInstructions)
+            if (method.CilMethodBody == null || !method.CilMethodBody.Instructions.Any())
                 return false;
 
             //calls the second resolve method (used if string isn't in cache)
-            if (!method.Body.Instructions.Any(a => a.OpCode.Code == Code.Call && a.Operand is MethodDef m
-                                                                              && m.MethodSig.ToString() == "System.String (System.Int32,System.Boolean)"))
+            if (!method.CilMethodBody.Instructions.Any(a => a.OpCode.Code == CilCode.Call && a.Operand is MethodDefinition m
+                                                                              && m.Signature.ToString() == "System.String *(System.Int32, System.Boolean)"))
                 return false;
                 
             //is not private or public

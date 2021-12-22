@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
+using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
 
 namespace EazFixer.Processors
 {
     internal class StringFixer : ProcessorBase
     {
-        private MethodDef _decrypterMethod;
+        private MethodDefinition _decrypterMethod;
 
         protected override void InitializeInternal()
         {
@@ -29,20 +29,20 @@ namespace EazFixer.Processors
             StacktracePatcher.PatchStackTraceGetMethod.MethodToReplace = decrypter;
 
             //for every method with a body...
-            foreach (MethodDef meth in Utils.GetMethodsRecursive(Ctx.Module).Where(a => a.HasBody && a.Body.HasInstructions))
+            foreach (MethodDefinition meth in Utils.GetMethodsRecursive(Ctx.Module).Where(a => a.CilMethodBody != null && a.CilMethodBody.Instructions.Any()))
             {
                 //.. and every instruction (starting at the second one) ...
-                for (int i = 1; i < meth.Body.Instructions.Count; i++)
+                for (int i = 1; i < meth.CilMethodBody.Instructions.Count; i++)
                 {
                     //get this instruction and the previous
-                    var prev = meth.Body.Instructions[i - 1];
-                    var curr = meth.Body.Instructions[i];
+                    var prev = meth.CilMethodBody.Instructions[i - 1];
+                    var curr = meth.CilMethodBody.Instructions[i];
 
                     //if they invoke the string decrypter method with an int parameter
-                    if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDef md && md.MDToken == _decrypterMethod.MDToken)
+                    if (prev.IsLdcI4() && curr.Operand != null && curr.Operand is MethodDefinition md && md.MetadataToken == _decrypterMethod.MetadataToken)
                     {
                         //get the int parameter, and get the resulting string from either cache or invoking the decrypter method
-                        int val = prev.GetLdcI4Value();
+                        int val = prev.GetLdcI4Constant();
                         if (!dictionary.ContainsKey(val))
                             dictionary[val] = (string) decrypter.Invoke(null, new object[] {val});
                             
@@ -50,8 +50,8 @@ namespace EazFixer.Processors
                         if (dictionary[val] == ".ctor" && Flags.VirtFix) continue;
 
                         //replace the instructions with the string
-                        prev.OpCode = OpCodes.Nop;
-                        curr.OpCode = OpCodes.Ldstr;
+                        prev.OpCode = CilOpCodes.Nop;
+                        curr.OpCode = CilOpCodes.Ldstr;
                         curr.Operand = dictionary[val];
                     }
                 }
@@ -70,7 +70,8 @@ namespace EazFixer.Processors
 
             //remove the string decryptor class
             var stringType = _decrypterMethod.DeclaringType;
-            Ctx.Module.Types.Remove(stringType);
+            if (!Ctx.Module.TopLevelTypes.Remove(stringType))
+                throw new Exception("Could not remove string decrypter class");
         }
     }
 }

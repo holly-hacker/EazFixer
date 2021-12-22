@@ -5,15 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
+using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
 
 namespace EazFixer.Processors
 {
     internal class AssemblyResolver : ProcessorBase
     {
-        private TypeDef _assemblyResolver;
-        private MethodDef _moveNext;
+        private TypeDefinition _assemblyResolver;
+        private MethodDefinition _moveNext;
         private List<EmbeddedAssemblyInfo> _assemblies;
         private MethodInfo _decrypter;
         private MethodInfo _decompressor;
@@ -22,13 +22,13 @@ namespace EazFixer.Processors
         {
             //try to find the embedded assemblies string, which is located in 
             //the iterator in the EnumerateEmbeddedAssemblies function
-            _assemblyResolver = Ctx.Module.Types.SingleOrDefault(CanBeAssemblyResolver)
+            _assemblyResolver = Ctx.Module.GetAllTypes().SingleOrDefault(CanBeAssemblyResolver)
                                 ?? throw new Exception("Could not find resolver type");
             var extractionApi = _assemblyResolver.NestedTypes.SingleOrDefault(CanBeExtractionApi)
                                 ?? throw new Exception("Could not find assembly extraction helper");
             var enumerable = extractionApi.NestedTypes.SingleOrDefault(CanBeEnumerable)
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies iterator");
-            _moveNext = enumerable.Methods.SingleOrDefault(CanBeMoveNext)
+            _moveNext = GetMoveNextMethod(enumerable)
                                 ?? throw new Exception("Could not find EnumerateEmbeddedAssemblies's MoveNext");
 
             //find the decryption methods
@@ -49,9 +49,9 @@ namespace EazFixer.Processors
             var path = Path.GetDirectoryName(Ctx.Assembly.Location);
 
             //get assemblies
-            //this happens here because we need string to be decrypted
+            //this happens here because we need strings to be decrypted
             if (!Ctx.Get<StringFixer>().Processed) throw new Exception("StringFixer is required!");
-            var str = _moveNext.Body.Instructions.SingleOrDefault(a => a.OpCode.Code == Code.Ldstr)?.Operand as string
+            var str = _moveNext.CilMethodBody.Instructions.SingleOrDefault(a => a.OpCode.Code == CilCode.Ldstr)?.Operand as string
                       ?? throw new Exception("Could not find assembly list");
             _assemblies = EnumerateEmbeddedAssemblies(str).Where(a => !a.Fullname.StartsWith("#A,A,")).ToList();    //TODO: investigate prefix
 
@@ -86,20 +86,23 @@ namespace EazFixer.Processors
         protected override void CleanupInternal()
         {
             //remove the call to the method that sets OnAssemblyResolve
-            var modType = Ctx.Module.GlobalType ?? throw new Exception("Could not find <Module>");
-            var instructions = modType.FindStaticConstructor()?.Body?.Instructions ?? throw new Exception("Missing <Module> .cctor");
-            foreach (Instruction instr in instructions)
+            var modType = Ctx.Module.GetModuleType() ?? throw new Exception("Could not find <Module>");
+            var instructions = modType.GetStaticConstructor()?.CilMethodBody?.Instructions ?? throw new Exception("Missing <Module> .cctor");
+            foreach (CilInstruction instr in instructions)
             {
-                if (instr.OpCode.Code != Code.Call) continue;
-                if (!(instr.Operand is MethodDef md)) continue;
+                if (instr.OpCode.Code != CilCode.Call) continue;
+                if (!(instr.Operand is MethodDefinition md)) continue;
 
                 if (md.DeclaringType == _assemblyResolver)
-                    instr.OpCode = OpCodes.Nop;
+                    instr.OpCode = CilOpCodes.Nop;
             }
 
             //remove types
             if (_decompressor == null) //if it is present, more stuff is going on that I don't know about (better be safe)
-                Ctx.Module.Types.Remove(_assemblyResolver);
+            {
+                // TODO: verify that this is a top-level type
+                Ctx.Module.TopLevelTypes.Remove(_assemblyResolver);
+            }
 
             //remove resources
             foreach (var assembly in _assemblies)
@@ -107,14 +110,14 @@ namespace EazFixer.Processors
                                             ?? throw new Exception("Resource name not unique (or present)"));
         }
 
-        private bool CanBeAssemblyResolver(TypeDef t)
+        private bool CanBeAssemblyResolver(TypeDefinition t)
         {
-            if (t.Methods.Count(a => a.IsPinvokeImpl) != 1) return false;   //MoveFileEx
+            if (t.Methods.Count(a => a.IsPInvokeImpl) != 1) return false;   //MoveFileEx
             if (t.NestedTypes.Count < 4) return false; //AssemblyCache, AssemblyRepresentation, ExtractionApi, RNG
 
-            foreach (MethodDef m in t.Methods.Where(a => a.HasBody && a.Body.HasInstructions)) {
+            foreach (MethodDefinition m in t.Methods.Where(a => a.CilMethodBody != null && a.CilMethodBody.Instructions.Any())) {
                 //adds AssemblyResolver
-                bool addsResolver = m.Body.Instructions.Any(i => i.OpCode.Code == Code.Callvirt && i.Operand is MemberRef mr && mr.Name == "add_AssemblyResolve");
+                bool addsResolver = m.CilMethodBody.Instructions.Any(i => i.OpCode == CilOpCodes.Callvirt && i.Operand is MemberReference mr && mr.Name == "add_AssemblyResolve");
                 if (addsResolver)
                     return true;
             }
@@ -122,12 +125,19 @@ namespace EazFixer.Processors
             return false;
         }
 
-        private bool CanBeExtractionApi(TypeDef t) => t.HasNestedTypes && t.IsAbstract && t.IsSealed && t.NestedTypes.Any(CanBeEnumerable);
-        private bool CanBeEnumerable(TypeDef t) => t.HasInterfaces && t.Interfaces.Any(a => a.Interface.Name == "IEnumerable");
-        private bool CanBeMoveNext(MethodDef m) => m.Overrides.Any(a => a.MethodDeclaration.FullName == "System.Boolean System.Collections.IEnumerator::MoveNext()");
-
-        private bool CanBeDecryptionMethod1(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && m.IsNoInlining;
-        private bool CanBeDecompressionMethod(MethodDef m) => m.MethodSig.ToString() == "System.Byte[] (System.Byte[])" && !m.IsNoInlining;
+        private bool CanBeExtractionApi(TypeDefinition t) => t.NestedTypes.Any() && t.IsAbstract && t.IsSealed && t.NestedTypes.Any(CanBeEnumerable);
+        private bool CanBeEnumerable(TypeDefinition t) => t.Interfaces.Any() && t.Interfaces.Any(a => a.Interface.Name == "IEnumerable");
+        private MethodDefinition GetMoveNextMethod(TypeDefinition t) => t.MethodImplementations
+                                                                            .Where(mi =>
+                                                                                mi.Declaration.FullName ==
+                                                                                "System.Boolean System.Collections.IEnumerator::MoveNext()")
+                                                                            .Select(mi => mi.Body)
+                                                                            .FirstOrDefault()?
+                                                                            .Resolve()
+                                                                        ?? throw new Exception(
+                                                                            "Could not find MoveNext method");
+        private bool CanBeDecryptionMethod1(MethodDefinition m) => m.Signature.ToString() == "System.Byte[] *(System.Byte[])" && m.NoInlining;
+        private bool CanBeDecompressionMethod(MethodDefinition m) => m.Signature.ToString() == "System.Byte[] *(System.Byte[])" && !m.NoInlining;
 
         private static IEnumerable<EmbeddedAssemblyInfo> EnumerateEmbeddedAssemblies(string text)
         {

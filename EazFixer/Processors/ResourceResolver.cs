@@ -4,21 +4,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using dnlib.DotNet;
-using dnlib.DotNet.Emit;
+using System.Runtime.InteropServices;
+using AsmResolver.DotNet;
+using AsmResolver.PE.DotNet.Cil;
 
 namespace EazFixer.Processors
 {
     internal class ResourceResolver : ProcessorBase
     {
         public List<Assembly> ResourceAssemblies;
-        private TypeDef _resourceResolver;
-        private MethodDef _initMethod;
+        private TypeDefinition _resourceResolver;
+        private MethodDefinition _initMethod;
 
         protected override void InitializeInternal()
         {
             //find all "Resources" classes, and store them for later use
-            _resourceResolver = Ctx.Module.Types.SingleOrDefault(CanBeResourceResolver) 
+            _resourceResolver = Ctx.Module.GetAllTypes().SingleOrDefault(CanBeResourceResolver)
                 ?? throw new Exception("Could not find resolver type");
             _initMethod = _resourceResolver.Methods.SingleOrDefault(CanBeInitMethod) 
                 ?? throw new Exception("Could not find init method");
@@ -49,9 +50,16 @@ namespace EazFixer.Processors
             foreach (var assembly in ResourceAssemblies) {
                 foreach (Module module in assembly.Modules) {
                     Debug.WriteLine("[D] Loading module for ResourceResolver...");
-                    var md = ModuleDefMD.Load(module);
 
-                    foreach (Resource resource in md.Resources)
+                    // TODO: verify that this works
+                    var baseAddress = Marshal.GetHINSTANCE(module);
+
+                    if (baseAddress == IntPtr.Zero || baseAddress == new IntPtr(-1))
+                        throw new Exception("Failed to instantiate resource module");
+
+                    var md = ModuleDefinition.FromModuleBaseAddress(baseAddress);
+
+                    foreach (ManifestResource resource in md.Resources)
                         Ctx.Module.Resources.Add(resource);
                 }
             }
@@ -60,41 +68,42 @@ namespace EazFixer.Processors
         protected override void CleanupInternal()
         {
             //remove the call to the method that sets OnResourceResolve
-            var modType = Ctx.Module.GlobalType ?? throw new Exception("Could not find <Module>");
-            var instructions = modType.FindStaticConstructor()?.Body?.Instructions ?? throw new Exception("Missing <Module> .cctor");
-            foreach (Instruction instr in instructions) {
-                if (instr.OpCode.Code != Code.Call) continue;
-                if (!(instr.Operand is MethodDef md)) continue;
+            var modType = Ctx.Module.GetModuleType() ?? throw new Exception("Could not find <Module>");
+            var instructions = modType.GetStaticConstructor()?.CilMethodBody?.Instructions ?? throw new Exception("Missing <Module> .cctor");
+            foreach (CilInstruction instr in instructions) {
+                if (instr.OpCode != CilOpCodes.Call) continue;
+                if (!(instr.Operand is MethodDefinition md)) continue;
 
                 if (md.DeclaringType == _resourceResolver)
-                    instr.OpCode = OpCodes.Nop;
+                    instr.OpCode = CilOpCodes.Nop;
             }
 
-            Ctx.Module.Types.Remove(_resourceResolver);
+            if (!Ctx.Module.TopLevelTypes.Remove(_resourceResolver))
+                throw new Exception("Could not remove resource resolver type");
         }
 
-        private static bool CanBeResourceResolver(TypeDef t)
+        private static bool CanBeResourceResolver(TypeDefinition t)
         {
             if (t.Fields.Count != 2) return false;
             if (t.NestedTypes.Count != 1) return false;
 
-            foreach (MethodDef m in t.Methods.Where(a => a.HasBody && a.Body.HasInstructions)) {
+            foreach (MethodDefinition m in t.Methods.Where(a => a.CilMethodBody != null && a.CilMethodBody.Instructions.Any())) {
                 //adds ResourceResolver
-                bool addsResolver = m.Body.Instructions.Any(i => i.OpCode.Code == Code.Callvirt && i.Operand is MemberRef mr && mr.Name == "add_ResourceResolve");
+                bool addsResolver = m.CilMethodBody.Instructions.Any(i => i.OpCode == CilOpCodes.Callvirt && i.Operand is MemberReference mr && mr.Name == "add_ResourceResolve");
                 if (addsResolver) return true;
             }
 
             return false;
         }
 
-        private static bool CanBeInitMethod(MethodDef a)
+        private static bool CanBeInitMethod(MethodDefinition a)
         {
-            if (!a.HasBody || !a.Body.HasInstructions) return false;
+            if (a.CilMethodBody == null || !a.CilMethodBody.Instructions.Any()) return false;
 
-            if (a.MethodSig.ToString() != "System.Void ()") return false;
+            if (a.Signature.ToString() != "System.Void *()") return false;
             
             //might get outdated soon, watch this
-            return a.Body.Instructions.First().OpCode.Code == Code.Volatile;
+            return a.CilMethodBody.Instructions.First().OpCode.Code == CilCode.Volatile;
         }
     }
 }

@@ -61,7 +61,15 @@ namespace EazFixer
                 Console.WriteLine();
 
                 Console.WriteLine("Writing new assembly...");
-                ctx.Module.Write(Flags.OutFile);
+                try
+                {
+                    ctx.Module.Write(Flags.OutFile);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
 
 #if DEBUG
                 return Exit("DONE", true);
