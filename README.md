@@ -17,7 +17,7 @@ EazFixer is a deobfuscation tool for [Eazfuscator](https://www.gapotchenko.com/e
 * Data virtualization
 
 ### Out of scope:
-* Code virtualization (separate project)
+* Code virtualization (consider using [EazyDevirt](https://github.com/puff/EazyDevirt))
 * Symbol renaming (symbol names are either unrecoverable or encrypted. For symbol decryption in case of a known key, see [EazDecode](https://github.com/HoLLy-HaCKeR/EazDecode))
 * Automatic code optimization (not an anti-feature!)
 * Code control flow obfuscation (I didn't have any problems with my samples in dnSpy)
